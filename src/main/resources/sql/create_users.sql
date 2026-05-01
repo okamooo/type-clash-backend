@@ -6,5 +6,6 @@ CREATE TABLE users (
     icon_image VARCHAR(255),                 -- アイコン画像のパスまたはURL
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 作成日時
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, -- 更新日時
-    deleted_at TIMESTAMP                     -- 論理削除日時（未削除時はNULL）
+    deleted_at TIMESTAMP,                    -- 論理削除日時
+    background_image INTEGER NOT NULL DEFAULT 1 -- 背景画像ID（デフォルト値を1に設定）
 );
