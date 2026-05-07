@@ -33,7 +33,7 @@ erDiagram
         INTEGER user_id FK
         INTEGER score
         INTEGER accuracy_rate
-        TIMESTAMP started_at
+        TIMESTAMP finished_at
     }
 
     battle_results {
@@ -45,7 +45,7 @@ erDiagram
         INTEGER player2_score
         INTEGER player1_accuracy_rate
         INTEGER player2_accuracy_rate
-        TIMESTAMP started_at
+        TIMESTAMP finished_at
     }
 
     users ||--o{ single_results : has_single_results
