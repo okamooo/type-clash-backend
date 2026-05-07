@@ -30,7 +30,7 @@
 | --- | --- | --- |
 | GET | `/api/magic-words` | 対戦モードで出題するワードを1件取得する |
 | POST | `/api/battle-results` | 対戦の結果（対戦ID・スコア・正答率・勝者など）を登録する |
-| GET | `/api/battle-results/:id` | 指定した対戦IDに紐づく対戦結果を取得する |
+| GET | `/api/battle-results/:id` | 指定した対戦結果IDのデータを1件取得する |
 
 ---
 
