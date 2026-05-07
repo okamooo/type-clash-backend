@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS words;
+
 CREATE TABLE words (
     id BIGSERIAL PRIMARY KEY,
     display_text VARCHAR(255) NOT NULL,

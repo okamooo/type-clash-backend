@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS magic_words;
+
 CREATE TABLE magic_words (
     magic_id SERIAL PRIMARY KEY,            -- クイズID（自動採番）
     magic_text VARCHAR(255) NOT NULL,      -- ローマ字テキスト（画面表示用）
