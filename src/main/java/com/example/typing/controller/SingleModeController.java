@@ -21,12 +21,11 @@ public class SingleModeController {
 
     /**
      * 【単語取得】
-     * シングルモードで出題するワードを1件取得する
+     * シングルモードで使用する単語を全件取得する
      */
     @GetMapping("/words")
-    public Words getWords() {
-        List<Words> words = wordService.getWordsForGame(1);
-        return words.isEmpty() ? null : words.get(0);
+    public List<Words> getWords() {
+        return wordService.getAllWords();
     }
 
     /**

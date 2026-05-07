@@ -23,10 +23,10 @@ public class SingleModeService {
     }
 
     /**
-     * ゲーム用の単語を取得
+     * 全ての単語を取得（フロント側でランダム表示・リスト保持するため）
      */
-    public List<Words> getWordsForGame(int limit) {
-        return wordRepository.findRandomWords(limit);
+    public List<Words> getAllWords() {
+        return wordRepository.findAll();
     }
 
     /**
