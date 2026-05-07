@@ -17,7 +17,7 @@
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| GET | `/api/words` | シングルモードで出題するワードを1件取得する |
+| GET | `/api/words` | シングルモードで出題するワードを全件取得する |
 | POST | `/api/single-results` | シングルモードのプレイ結果（ユーザーID・スコア・正答率など）を登録する |
 | GET | `/api/single-results/latest?userId=:userId` | 指定したユーザーの最近のシングルモード結果を1件取得する |
 | GET | `/api/single-results/rankings` | シングルモードのスコア順ランキングを取得する |
@@ -28,7 +28,7 @@
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| GET | `/api/magic-words` | 対戦モードで出題するワードを1件取得する |
+| GET | `/api/magic-words` | 対戦モードで出題するワードを全件取得する |
 | POST | `/api/battle-results` | 対戦の結果（対戦ID・スコア・正答率・勝者など）を登録する |
 | GET | `/api/battle-results/:id` | 指定した対戦結果IDのデータを1件取得する |
 
