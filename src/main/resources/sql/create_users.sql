@@ -1,3 +1,5 @@
+DROP TABLE IF EXISTS users CASCADE;
+
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,                    -- ユーザーID（自動採番）
     name VARCHAR(50) NOT NULL,               -- ユーザー名
