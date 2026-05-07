@@ -34,11 +34,11 @@
 
 ---
 
-### ■ マッチング・対戦進行
+### ■ マッチング
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| POST | `/api/matches/queue/join` | 対戦待機キューに参加する。マッチング待ち状態になる |
-| DELETE | `/api/matches/queue/leave` | 対戦待機をキャンセルしてキューから離脱する |
-| POST | `/api/matches` | キューで成立したマッチを元に対戦を開始する。対戦IDを発行する |
-| GET | `/api/matches/:matchId` | 指定した対戦IDの現在の対戦状態（進行中・終了など）を取得する |
+| POST | `/api/battles/queue/join` | 対戦待機キューに参加する。マッチング待ち状態になる |
+| DELETE | `/api/battles/queue/leave` | 対戦待機をキャンセルしてキューから離脱する |
+| POST | `/api/battles` | キューで成立した対戦を開始する。対戦IDを発行する |
+| GET | `/api/battles/:battleId` | 指定した対戦IDの現在の対戦状態（進行中・終了など）を取得する |
