@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface SingleResultRepository extends JpaRepository<SingleResult, Integer> {
-    Optional<SingleResult> findFirstByUserIdOrderByFinishedAtDesc(Integer userId);
+public interface SingleResultRepository extends JpaRepository<SingleResult, Long> {
+    Optional<SingleResult> findFirstByUserIdOrderByFinishedAtDesc(Long userId);
     List<SingleResult> findAllByOrderByScoreDesc();
 }

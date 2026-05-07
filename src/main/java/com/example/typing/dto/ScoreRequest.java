@@ -4,8 +4,8 @@ import lombok.Data;
 
 @Data
 public class ScoreRequest {
-    private Integer userId; // ユーザーID
-    private int rawScore; // 暫定スコア
-    private int correctCount; // 正解入力数
-    private int totalInput; // 総入力数
+    private Long userId; // ユーザーID
+    private Integer rawScore; // 暫定スコア
+    private Integer correctCount; // 正解入力数
+    private Integer totalInput; // 総入力数
 }

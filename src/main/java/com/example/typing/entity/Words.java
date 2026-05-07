@@ -8,7 +8,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.Data;
 
-// クイズの単語を表すエンティティクラス
+// 単語を表すエンティティクラス
 @Entity
 @Data
 @Table(name = "words")

@@ -33,9 +33,10 @@ public class SingleModeService {
      * DB 保存
      */
     @Transactional
-    public int calculateAndSaveScore(Integer userId, int rawScore, int correctCount, int totalInput) {
-        if (totalInput == 0)
-            return 0;
+    public int calculateAndSaveScore(Long userId, int rawScore, int correctCount, int totalInput) {
+        if (totalInput <= 0) {
+            throw new IllegalArgumentException("Total input must be greater than zero");
+        }
 
         // 1. スコアと正答率（Accuracy）の計算
         double accuracy = (double) correctCount / totalInput;
@@ -53,14 +54,14 @@ public class SingleModeService {
         singleResultRepository.save(result);
 
         return verifiedScore;
-        }
+    }
 
-        /**
-        * 最新のスコアを取得
-        */
-        public SingleResult getLatestResult(Integer userId) {
+    /**
+     * 最新のスコアを取得
+     */
+    public SingleResult getLatestResult(Long userId) {
         return singleResultRepository.findFirstByUserIdOrderByFinishedAtDesc(userId).orElse(null);
-        }
+    }
 
     /**
      * ランキングを取得
