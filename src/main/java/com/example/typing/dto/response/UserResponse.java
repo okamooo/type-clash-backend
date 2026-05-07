@@ -1,4 +1,4 @@
-package com.example.typing.dto;
+package com.example.typing.dto.response;
 
 import com.example.typing.entity.User;
 import lombok.Data;
