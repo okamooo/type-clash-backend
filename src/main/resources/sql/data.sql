@@ -1,3 +1,14 @@
+-- users サンプルデータ
+INSERT INTO users (
+    name,
+    email,
+    password,
+    icon_image,
+    background_image
+) VALUES
+('user1', 'user1@example.com', 'password', NULL, 0),
+('user_2', 'user2@example.com', 'password', NULL, 1);
+
 -- シングルモード用サンプル単語
 INSERT INTO words (display_text, kana_reading, romaji_target) VALUES 
 ('こんにちは', 'こんにちは', 'konnichiwa'),
