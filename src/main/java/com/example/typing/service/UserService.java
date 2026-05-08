@@ -120,9 +120,11 @@ public class UserService {
     public void deleteUser(Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
+                
         user.setEmail("deleted_" + userId + "@deleted");
         user.setDeletedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
+
         userRepository.save(user);
     }
 }
