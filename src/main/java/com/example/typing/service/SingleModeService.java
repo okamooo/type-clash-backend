@@ -1,6 +1,7 @@
 package com.example.typing.service;
 
 import com.example.typing.entity.Words;
+import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.repository.WordRepository;
 import com.example.typing.repository.SingleResultRepository;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -65,8 +67,22 @@ public class SingleModeService {
 
     /**
      * ランキングを取得
+     * - ユーザーごとのベストスコアで集計し、順位を付与して返す
+     * - データが存在しない場合は空リストを返す
      */
-    public List<SingleResult> getRankings() {
-        return singleResultRepository.findAllByOrderByScoreDesc();
+    public List<SingleRankingResponse> getRankings() {
+        List<Object[]> rows = singleResultRepository.findRankings();
+
+        List<SingleRankingResponse> rankings = new ArrayList<>();
+        for (int i = 0; i < rows.size(); i++) {
+            Object[] row = rows.get(i);
+            rankings.add(new SingleRankingResponse(
+                    i + 1, // 順位
+                    (String) row[1], // ユーザー名
+                    ((Number) row[2]).intValue(), // スコア
+                    ((Number) row[3]).intValue() // 正答率
+            ));
+        }
+        return rankings;
     }
 }

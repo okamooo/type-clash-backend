@@ -7,7 +7,7 @@ INSERT INTO users (
     background_image
 ) VALUES
 ('user1', 'user1@example.com', 'password', NULL, 0),
-('user_2', 'user2@example.com', 'password', NULL, 1);
+('user2', 'user2@example.com', 'password', NULL, 1);
 
 -- シングルモード用サンプル単語
 INSERT INTO words (display_text, kana_reading, romaji_target) VALUES 
@@ -26,3 +26,11 @@ INSERT INTO magic_words (magic_text, magic_reading, magic_target) VALUES
 ('アイスブリザード', 'あいすぶりざーど', 'aisuburiza-do'),
 ('ダークボルテックス', 'だーくぼるてっくす', 'da-kuborutekkusu'),
 ('ホーリーライトニング', 'ほーりーらいとにんぐ', 'ho-ri-raitoninngu');
+
+-- -- シングルモードランキング確認用 プレイ結果データ
+-- -- user1: 2回プレイ（ベストスコア980が使われる）
+-- -- user2: 1回プレイ
+-- INSERT INTO single_results (user_id, score, accuracy_rate, finished_at) VALUES
+-- (1, 980, 95, NOW()),
+-- (1, 800, 80, NOW()),
+-- (2, 850, 88, NOW());
