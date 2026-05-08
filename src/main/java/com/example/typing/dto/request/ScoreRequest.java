@@ -1,4 +1,4 @@
-package com.example.typing.dto;
+package com.example.typing.dto.request;
 
 import lombok.Data;
 
