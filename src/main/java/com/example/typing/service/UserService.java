@@ -111,7 +111,7 @@ public class UserService {
 
     /**
      * 【ユーザー削除】
-     * 指定したユーザーを論理削除する（deleted_at に削除日時をセット）
+     * 指定したユーザーを論理削除する（deleted_at に削除日時をセット、email を無効化）
      *
      * @param userId ユーザーID
      * @throws UserNotFoundException ユーザーが存在しない、または論理削除済みの場合
@@ -120,10 +120,9 @@ public class UserService {
     public void deleteUser(Long userId) {
         User user = userRepository.findByIdAndDeletedAtIsNull(userId)
                 .orElseThrow(() -> new UserNotFoundException(userId));
-
+        user.setEmail("deleted_" + userId + "@deleted");
         user.setDeletedAt(LocalDateTime.now());
         user.setUpdatedAt(LocalDateTime.now());
-
         userRepository.save(user);
     }
 }
