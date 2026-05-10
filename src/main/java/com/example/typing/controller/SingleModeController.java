@@ -2,7 +2,6 @@ package com.example.typing.controller;
 
 import com.example.typing.dto.request.ScoreRequest;
 import com.example.typing.dto.response.SingleRankingListResponse;
-import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.entity.Words;
 import com.example.typing.service.SingleModeService;

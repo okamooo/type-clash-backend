@@ -69,24 +69,24 @@ public class SingleModeService {
     /**
      * ランキングを取得
      * - SQLのRANK()で算出した順位をそのまま使用（同率順位・順位スキップに対応）
-     * - 総ユーザー数と順位リストをまとめてレスポンスに詰めて返す
+     * - 総ユーザー数・平均ベストスコアと順位リストをまとめてレスポンスに詰めて返す
      * - データが存在しない場合は空リストを返す
      */
     public SingleRankingListResponse getRankings() {
         List<Object[]> rows = singleResultRepository.findRankings();
-        int totalUsers = singleResultRepository.countTotalUsers(); // 総ユーザー数
+        int totalUsers = singleResultRepository.countTotalUsers();
+        double averageBestScore = singleResultRepository.findAverageBestScore();
 
         List<SingleRankingResponse> rankings = new ArrayList<>();
-        for (int i = 0; i < rows.size(); i++) {
-            Object[] row = rows.get(i);
+        for (Object[] row : rows) {
             rankings.add(new SingleRankingResponse(
                     ((Number) row[0]).intValue(), // 順位
                     ((Number) row[1]).longValue(), // ユーザーID
                     (String) row[2], // ユーザー名
                     ((Number) row[3]).intValue(), // ベストスコア
-                    ((Number) row[4]).intValue() // 正答率（平均・整数）
+                    ((Number) row[4]).intValue() // 正答率（ベストスコア時）
             ));
         }
-        return new SingleRankingListResponse(totalUsers, rankings);
+        return new SingleRankingListResponse(totalUsers, averageBestScore, rankings);
     }
 }

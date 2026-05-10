@@ -9,6 +9,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class SingleRankingListResponse {
 
-    private Integer totalUsers;                  // 総ユーザー数
+    private Integer totalUsers;                   // 総ユーザー数
+    private Double averageBestScore;              // 全ユーザーのベストスコアの平均
     private List<SingleRankingResponse> rankings; // ランキング一覧
 }
