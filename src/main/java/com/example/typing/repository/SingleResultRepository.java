@@ -9,25 +9,65 @@ import java.util.Optional;
 
 @Repository
 public interface SingleResultRepository extends JpaRepository<SingleResult, Long> {
-    Optional<SingleResult> findFirstByUserIdOrderByFinishedAtDesc(Long userId);
-    List<SingleResult> findAllByOrderByScoreDesc();
+        Optional<SingleResult> findFirstByUserIdOrderByFinishedAtDesc(Long userId);
 
-    /**
-     * ランキング取得（上位100件）
-     * - ユーザーごとのベストスコアで集計
-     * - 並び順: スコア降順 → 正答率降順 → 最初のプレイ日時昇順（早い人が上位）
-     * - 退会済みユーザー（deleted_at IS NOT NULL）は除外
-     */
-    @Query(value = """
-            SELECT sr.user_id, u.name, MAX(sr.score), CAST(AVG(sr.accuracy_rate) AS integer)
-            FROM single_results sr
-            JOIN users u ON u.id = sr.user_id
-            WHERE u.deleted_at IS NULL
-            GROUP BY sr.user_id, u.name
-            ORDER BY MAX(sr.score) DESC,
-                     AVG(sr.accuracy_rate) DESC,
-                     MIN(sr.finished_at) ASC
-            LIMIT 100
-            """, nativeQuery = true)
-    List<Object[]> findRankings();
+        List<SingleResult> findAllByOrderByScoreDesc();
+
+        /**
+         * ランキング取得（上位100件）
+         * - ベストスコア時のレコードをユーザーごとに1件に絞り込み
+         *   （同スコアの場合は正答率降順 → 最初のプレイ日時昇順で選択）
+         * - RANK()でスコア降順 → 正答率降順で順位付け（同率同順位・順位スキップあり）
+         * - 100位以内を返す（100位タイは全員含む）
+         * - 同順位内はプレイ日時昇順で表示
+         * - 退会済みユーザー（deleted_at IS NOT NULL）は除外
+         */
+        @Query(value = """
+                SELECT ranked.rank,
+                ranked.user_id,
+                ranked.name,
+                ranked.best_score,
+                ranked.accuracy_rate
+                FROM (
+                SELECT RANK() OVER (
+                        ORDER BY best.score DESC,
+                                        best.accuracy_rate DESC
+                        )              AS rank,
+                        best.user_id,
+                        u.name,
+                        best.score     AS best_score,
+                        best.accuracy_rate,
+                        best.finished_at
+                FROM (
+                        SELECT sr.*,
+                        ROW_NUMBER() OVER (
+                                PARTITION BY sr.user_id
+                                ORDER BY sr.score        DESC,
+                                        sr.accuracy_rate DESC,
+                                        sr.finished_at   ASC
+                        ) AS row_num
+                        FROM single_results sr
+                ) best
+                JOIN users u ON u.id = best.user_id
+                WHERE best.row_num = 1
+                AND u.deleted_at IS NULL
+                ) ranked
+                WHERE ranked.rank <= 100
+                ORDER BY ranked.rank    ASC,
+                        ranked.finished_at ASC
+                """, nativeQuery = true)
+        List<Object[]> findRankings();
+
+        /**
+         * 総ユーザー数取得
+         * - シングルゲームのスコアが1件以上あるユーザーが対象
+         * - 退会済みユーザー（deleted_at IS NOT NULL）は除外
+         */
+        @Query(value = """
+                        SELECT COUNT(DISTINCT sr.user_id)
+                        FROM single_results sr
+                        JOIN users u ON u.id = sr.user_id
+                        WHERE u.deleted_at IS NULL
+                        """, nativeQuery = true)
+        int countTotalUsers();
 }

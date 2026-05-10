@@ -1,6 +1,7 @@
 package com.example.typing.service;
 
 import com.example.typing.entity.Words;
+import com.example.typing.dto.response.SingleRankingListResponse;
 import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.repository.WordRepository;
@@ -67,22 +68,25 @@ public class SingleModeService {
 
     /**
      * ランキングを取得
-     * - ユーザーごとのベストスコアで集計し、順位を付与して返す
+     * - SQLのRANK()で算出した順位をそのまま使用（同率順位・順位スキップに対応）
+     * - 総ユーザー数と順位リストをまとめてレスポンスに詰めて返す
      * - データが存在しない場合は空リストを返す
      */
-    public List<SingleRankingResponse> getRankings() {
+    public SingleRankingListResponse getRankings() {
         List<Object[]> rows = singleResultRepository.findRankings();
+        int totalUsers = singleResultRepository.countTotalUsers(); // 総ユーザー数
 
         List<SingleRankingResponse> rankings = new ArrayList<>();
         for (int i = 0; i < rows.size(); i++) {
             Object[] row = rows.get(i);
             rankings.add(new SingleRankingResponse(
-                    i + 1, // 順位
-                    (String) row[1], // ユーザー名
-                    ((Number) row[2]).intValue(), // スコア
-                    ((Number) row[3]).intValue() // 正答率
+                    ((Number) row[0]).intValue(), // 順位
+                    ((Number) row[1]).longValue(), // ユーザーID
+                    (String) row[2], // ユーザー名
+                    ((Number) row[3]).intValue(), // ベストスコア
+                    ((Number) row[4]).intValue() // 正答率（平均・整数）
             ));
         }
-        return rankings;
+        return new SingleRankingListResponse(totalUsers, rankings);
     }
 }
