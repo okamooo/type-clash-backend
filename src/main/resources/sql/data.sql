@@ -16,6 +16,20 @@ INSERT INTO magic_words (magic_text, magic_reading, magic_target) VALUES
 ('ダークボルテックス', 'だーくぼるてっくす', 'da-kuborutekkusu'),
 ('ホーリーライトニング', 'ほーりーらいとにんぐ', 'ho-ri-raitoninngu');
 
+-- -- ユーザー1
+-- INSERT INTO users (id, name, email, password, icon_image, created_at, updated_at, deleted_at, background_image) VALUES
+-- (1, '佐藤 太郎', 'user1@example.com', '$2b$12$b36a83701f1c3191e19722d6f90274bc1b5501fe69ebf33313e44', NULL, '2025-05-01 09:00:00', '2025-05-01 09:00:00', NULL, 0);
+
+-- -- ユーザー1のシングルモード履歴（3件）
+-- INSERT INTO single_results (user_id, score, accuracy_rate, finished_at) VALUES
+-- (1, 1200, 95, '2025-05-01 10:00:00'),
+-- (1, 980,  88, '2025-05-03 14:30:00'),
+-- (1, 1500, 98, '2025-05-05 09:15:00');
+-- -- ユーザー1のシングルモード履歴（3件）
+-- INSERT INTO single_results (user_id, score, accuracy_rate, finished_at) VALUES
+-- (1, 1200, 95, '2025-05-01 10:00:00'),
+-- (1, 980,  88, '2025-05-03 14:30:00'),
+-- (1, 1500, 98, '2025-05-05 09:15:00');
 
 -- ============================================================
 -- モックデータ: users + single_results
