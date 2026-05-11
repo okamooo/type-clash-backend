@@ -1,13 +1,17 @@
 package com.example.typing.service;
 
 import com.example.typing.entity.Words;
+import com.example.typing.repository.SingleResultRepository.SingleRankingRow;
+import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.repository.WordRepository;
 import com.example.typing.repository.SingleResultRepository;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -65,8 +69,33 @@ public class SingleModeService {
 
     /**
      * ランキングを取得
+     * - SQLのRANK()で算出した順位をそのまま使用（同率順位・順位スキップに対応）
+     * - 総ユーザー数・平均ベストスコアと順位リストをまとめてレスポンスに詰めて返す
+     * - データが存在しない場合は空リスト・統計値0で返す
      */
-    public List<SingleResult> getRankings() {
-        return singleResultRepository.findAllByOrderByScoreDesc();
+    public SingleRankingResponse getRankings() {
+        List<SingleRankingRow> singleRankings = singleResultRepository.findRankingsWithStats();
+
+        // データなし
+        if (singleRankings.isEmpty()) {
+            return new SingleRankingResponse(0, 0.0, Collections.emptyList());
+        }
+
+        // 集計情報
+        SingleRankingRow firstRow = singleRankings.get(0);
+        int totalUsers = firstRow.getTotalUsers();
+        double averageBestScore = firstRow.getAverageBestScore();
+
+        // ランキング一覧
+        List<SingleRankingResponse.Entry> rankings = singleRankings.stream()
+                .map(row -> new SingleRankingResponse.Entry(
+                        row.getRank(),
+                        row.getUserId(),
+                        row.getName(),
+                        row.getBestScore(),
+                        row.getAccuracyRate()))
+                .toList();
+
+        return new SingleRankingResponse(totalUsers, averageBestScore, rankings);
     }
 }

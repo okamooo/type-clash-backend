@@ -1,6 +1,7 @@
 package com.example.typing.controller;
 
 import com.example.typing.dto.request.ScoreRequest;
+import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.entity.Words;
 import com.example.typing.service.SingleModeService;
@@ -73,10 +74,11 @@ public class SingleModeController {
     /**
      * 【ランキング取得】
      * シングルモードのスコア順ランキングを取得する
+     * データが存在しない場合は空配列を返す
      */
     @GetMapping("/single-results/rankings")
-    public ResponseEntity<?> getRankings() {
-        List<SingleResult> rankings = wordService.getRankings();
+    public ResponseEntity<SingleRankingResponse> getRankings() {
+        SingleRankingResponse rankings = wordService.getRankings();
         return ResponseEntity.ok(rankings);
     }
 }
