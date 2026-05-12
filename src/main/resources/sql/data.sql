@@ -1,3 +1,15 @@
+-- users サンプルデータ
+INSERT INTO users (
+    name,
+    email,
+    password,
+    icon_image,
+    background_image
+) VALUES
+('user1', 'user1@example.com', '$2a$10$9sZ3K0eIADTqbW4hybviXuXYm8OPUjHkSQXhk3Ic2q6EXUzjQynky', NULL, 0),
+('user_2', 'user2@example.com', '$2a$10$9sZ3K0eIADTqbW4hybviXuXYm8OPUjHkSQXhk3Ic2q6EXUzjQynky', NULL, 1);
+-- パスワード: password
+
 -- シングルモード用サンプル単語
 INSERT INTO words (display_text, kana_reading, romaji_target) VALUES 
 ('こんにちは', 'こんにちは', 'konnichiwa'),
@@ -245,12 +257,12 @@ INSERT INTO magic_words (magic_text, magic_reading, magic_target) VALUES
 -- -- uid 187-190: スコア1-4（極端な低スコア）
 -- -- uid 191-200: 未プレイ（追加の未プレイ枠）
 
--- INSERT INTO single_results (id, user_id, score, accuracy_rate, finished_at) VALUES
---     (1, 1, 542, 57.55, '2025-07-03 09:24:26'),
---     (2, 1, 543, 54.81, '2025-05-29 23:16:50'),
---     (3, 1, 546, 54.68, '2025-02-23 00:20:59'),
---     (4, 1, 454, 48.13, '2025-06-11 03:32:37'),
---     (5, 1, 670, 67.08, '2025-01-01 23:54:35'),
+INSERT INTO single_results (id, user_id, score, accuracy_rate, finished_at) VALUES
+    (1, 1, 542, 57.55, '2025-07-03 09:24:26'),
+    (2, 1, 543, 54.81, '2025-05-29 23:16:50'),
+    (3, 1, 546, 54.68, '2025-02-23 00:20:59'),
+    (4, 1, 454, 48.13, '2025-06-11 03:32:37'),
+    (5, 1, 670, 67.08, '2025-01-01 23:54:35');
 --     (6, 1, 643, 62.29, '2025-08-16 22:39:21'),
 --     (7, 1, 799, 79.8, '2025-02-27 17:00:34'),
 --     (8, 1, 726, 72.44, '2025-05-10 02:33:53'),
