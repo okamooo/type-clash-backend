@@ -1,6 +1,7 @@
 package com.example.typing.controller;
 
 import com.example.typing.dto.request.ScoreRequest;
+import com.example.typing.dto.response.SingleHistoryResponse;
 import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.entity.Words;
@@ -79,5 +80,16 @@ public class SingleModeController {
     public ResponseEntity<SingleRankingResponse> getRankings() {
         SingleRankingResponse rankings = wordService.getRankings();
         return ResponseEntity.ok(rankings);
+    }
+
+    /**
+     * 【スコア履歴取得】
+     * 指定したユーザーのシングルモードスコア履歴を取得する
+     * データが存在しない場合は空配列を返す
+     */
+    @GetMapping("/single-results/history")
+    public ResponseEntity<SingleHistoryResponse> getHistory(@RequestParam Long userId) {
+        SingleHistoryResponse history = wordService.getHistory(userId);
+        return ResponseEntity.ok(history);
     }
 }

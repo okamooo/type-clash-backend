@@ -1,7 +1,9 @@
 package com.example.typing.service;
 
 import com.example.typing.entity.Words;
+import com.example.typing.repository.SingleResultRepository.SingleHistoryRow;
 import com.example.typing.repository.SingleResultRepository.SingleRankingRow;
+import com.example.typing.dto.response.SingleHistoryResponse;
 import com.example.typing.dto.response.SingleRankingResponse;
 import com.example.typing.entity.SingleResult;
 import com.example.typing.repository.WordRepository;
@@ -97,5 +99,36 @@ public class SingleModeService {
                 .toList();
 
         return new SingleRankingResponse(totalUsers, averageBestScore, rankings);
+    }
+
+    /**
+     * 指定ユーザーのプレイ履歴・統計情報を取得する
+     * - 履歴は finished_at 降順（新しい順）で返す
+     * - 最高スコア・平均スコア・プレイ回数を SQL で算出してレスポンスに含める
+     * - データが存在しない場合は空リスト・統計値 0 で返す
+     */
+    public SingleHistoryResponse getHistory(Long userId) {
+        List<SingleHistoryRow> singleHistories = singleResultRepository.findHistoryByUserId(userId);
+
+        // データなし
+        if (singleHistories.isEmpty()) {
+            return new SingleHistoryResponse(0, 0.0, 0, Collections.emptyList());
+        }
+
+        // 統計情報
+        SingleHistoryRow firstRow = singleHistories.get(0);
+        int bestScore = firstRow.getBestScore();
+        double averageScore = firstRow.getAverageScore();
+        int playCount = firstRow.getPlayCount();
+
+        // 履歴一覧
+        List<SingleHistoryResponse.Entry> histories = singleHistories.stream()
+                .map(row -> new SingleHistoryResponse.Entry(
+                        row.getFinishedAt(),
+                        row.getScore(),
+                        row.getAccuracyRate()))
+                .toList();
+
+        return new SingleHistoryResponse(bestScore, averageScore, playCount, histories);
     }
 }
