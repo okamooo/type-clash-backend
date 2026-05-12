@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.typing.dto.request.LoginRequest;
 import com.example.typing.entity.User;
+import com.example.typing.exception.AuthenticationFailedException;
 import com.example.typing.repository.UserRepository;
 
 @Service
@@ -19,10 +20,10 @@ public class AuthService {
 
     public User authenticate(LoginRequest loginRequest) {
         User user = userRepository.findByEmailAndDeletedAtIsNull(loginRequest.getEmail())
-                .orElseThrow(() -> new RuntimeException("メールアドレスまたはパスワードが違います"));
+                .orElseThrow(() -> new AuthenticationFailedException("メールアドレスまたはパスワードが違います"));
 
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
-            throw new RuntimeException("メールアドレスまたはパスワードが違います");
+            throw new AuthenticationFailedException("メールアドレスまたはパスワードが違います");
         }
 
         return user;
