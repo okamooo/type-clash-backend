@@ -21,6 +21,7 @@
 | POST | `/api/single-results` | シングルモードのプレイ結果（ユーザーID・スコア・正答率など）を登録する |
 | GET | `/api/single-results/latest?userId=:userId` | 指定したユーザーの最近のシングルモード結果を1件取得する |
 | GET | `/api/single-results/rankings` | シングルモードのスコア順ランキングを取得する |
+| GET | `/api/single-results/history?userId=:userId` | 指定したユーザーのスコア履歴を取得する |
 
 ---
 

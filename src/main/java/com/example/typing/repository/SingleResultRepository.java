@@ -3,7 +3,10 @@ package com.example.typing.repository;
 import com.example.typing.entity.SingleResult;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -92,4 +95,39 @@ public interface SingleResultRepository extends JpaRepository<SingleResult, Long
                     rr.finished_at DESC
                 """, nativeQuery = true)
         List<SingleRankingRow> findRankingsWithStats();
+
+        /**
+         * 履歴取得結果のマッピング用インターフェース
+         */
+        interface SingleHistoryRow {
+            LocalDateTime  getFinishedAt();   // プレイ日時
+            Integer getScore();        // スコア
+            Integer getAccuracyRate(); // 正答率（%）
+            Integer getBestScore();    // 最高スコア
+            Double  getAverageScore(); // 平均スコア
+            Integer getPlayCount();    // プレイ回数
+        }
+
+        /**
+         * 指定ユーザーの履歴・統計情報を一括取得
+         * - 履歴は finished_at 降順（新しい順）で返す
+         * - 退会済みユーザー（deleted_at IS NOT NULL）は除外
+         * - データなしの場合は空リストを返す
+         */
+        @Query(value = """
+                SELECT
+                    sr.finished_at,
+                    sr.score,
+                    sr.accuracy_rate,
+                    MAX(sr.score)  OVER () AS best_score,
+                    AVG(sr.score)  OVER () AS average_score,
+                    COUNT(*)       OVER () AS play_count
+                FROM single_results sr
+                JOIN users u
+                    ON u.id = sr.user_id
+                WHERE sr.user_id   = :userId
+                    AND u.deleted_at IS NULL
+                ORDER BY sr.finished_at DESC
+                """, nativeQuery = true)
+        List<SingleHistoryRow> findHistoryByUserId(@Param("userId") Long userId);
 }
