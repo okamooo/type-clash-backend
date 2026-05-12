@@ -32,4 +32,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return 存在する場合 true
      */
     boolean existsByEmailAndDeletedAtIsNull(String email);
+
 }

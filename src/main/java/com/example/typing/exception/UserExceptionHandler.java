@@ -14,6 +14,14 @@ import java.util.Map;
 public class UserExceptionHandler {
 
     /**
+     * 401 認証失敗
+     */
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity<Map<String, Object>> handleAuthenticationFailedException(AuthenticationFailedException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, ex.getMessage());
+    }
+
+    /**
      * 404 ユーザーが見つからない
      */
     @ExceptionHandler(UserNotFoundException.class)
