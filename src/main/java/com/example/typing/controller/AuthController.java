@@ -73,7 +73,7 @@ public class AuthController {
                 .build();
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
-                .body(new LoginResponse(user.getName()));
+                .body(new LoginResponse(user.getId(), user.getName()));
 
     }
 }
