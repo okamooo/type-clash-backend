@@ -29,7 +29,8 @@ public class MatchMakingController {
     }
 
     /**
-     * マッチング待機列から離脱する
+     * マッチング待機列から離脱するメソッド
+     *
      * 送信先: /api/battles/queue/leave
      */
     @MessageMapping("/battles/queue/leave")

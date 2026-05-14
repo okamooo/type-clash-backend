@@ -2,6 +2,7 @@ package com.example.typing.service;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -13,6 +14,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MatchMakingService {
 
     private final Queue<Long> waitingPlayers = new ConcurrentLinkedQueue<>();
+    // 現在対戦中のペアを保持 (userId -> opponentId)
+    private final Map<Long, Long> activeMatches = new ConcurrentHashMap<>();
+    
     private final SimpMessagingTemplate messagingTemplate;
     private final AtomicLong matchIdCounter = new AtomicLong(1); // 1から始まる連番のID
 
@@ -27,8 +31,9 @@ public class MatchMakingService {
      * @param userId マッチングを希望するユーザーのID
      */
     public synchronized void joinQueue(long userId) {
+        System.out.println("DEBUG: [Service] User " + userId + " attempting to join queue.");
         if (waitingPlayers.contains(userId)) {
-            return; // すでにキューにいる場合は何もしない
+            return;
         }
 
         waitingPlayers.add(userId);
@@ -39,6 +44,12 @@ public class MatchMakingService {
             Long player2 = waitingPlayers.poll();
 
             if (player1 != null && player2 != null) {
+                System.out.println("DEBUG: [Service] Match found! " + player1 + " vs " + player2);
+                
+                // 対戦ペアを記録
+                activeMatches.put(player1, player2);
+                activeMatches.put(player2, player1);
+
                 // 対戦用の一意なID(Long)を生成
                 Long matchId = matchIdCounter.getAndIncrement();
 
@@ -65,6 +76,26 @@ public class MatchMakingService {
      * ユーザーを待機列から削除する（キャンセル時など）
      */
     public void leaveQueue(long userId) {
+        System.out.println("DEBUG: [Service] User " + userId + " leave queue request.");
+        
+        // 1. 待機列から削除
         waitingPlayers.remove(userId);
+
+        // 2. 対戦中の相手がいる場合は通知を送る
+        Long opponentId = activeMatches.remove(userId);
+        if (opponentId != null) {
+            activeMatches.remove(opponentId); // 相手側のデータも削除
+            
+            System.out.println("DEBUG: [Service] Notifying opponent " + opponentId + " about cancellation.");
+            
+            // 相手にキャンセルを通知
+            messagingTemplate.convertAndSend(
+                "/topic/match/notification/" + opponentId,
+                (Object) Map.of("status", "CANCELLED")
+            );
+
+            // 相手を再び待機列に戻してあげる
+            joinQueue(opponentId);
+        }
     }
 }
