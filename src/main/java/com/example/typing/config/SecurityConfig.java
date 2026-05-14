@@ -33,6 +33,9 @@ public class SecurityConfig {
         http
             .cors(Customizer.withDefaults()) //CorsConfigurationSourceを使用
             .csrf(csrf -> csrf.disable())
+            .headers(headers -> headers
+                .frameOptions(frameOptions -> frameOptions.sameOrigin())
+            ) //h2-consoleを使用できるように設定
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );
@@ -45,6 +48,9 @@ public class SecurityConfig {
     //     http
     //         .cors(Customizer.withDefaults()) //CorsConfigurationSourceを使用
     //         .csrf(csrf -> csrf.disable()) 
+    //         .headers(headers -> headers
+    //              .frameOptions(frameOptions -> frameOptions.sameOrigin())
+    //          )
     //         .sessionManagement(session -> session
     //             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
     //         )
