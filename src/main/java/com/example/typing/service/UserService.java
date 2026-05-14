@@ -5,6 +5,7 @@ import com.example.typing.dto.request.UserUpdateRequest;
 import com.example.typing.dto.response.UserResponse;
 import com.example.typing.entity.User;
 import com.example.typing.exception.EmailAlreadyExistsException;
+import com.example.typing.exception.InvalidPasswordException;
 import com.example.typing.exception.UserNotFoundException;
 import com.example.typing.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -89,8 +90,12 @@ public class UserService {
             user.setEmail(request.getEmail());
         }
 
-        // パスワードの更新（ハッシュ化）
+        // パスワードの更新（現在のパスワード照合 → ハッシュ化）
         if (request.getPassword() != null) {
+            if (request.getCurrentPassword() == null ||
+                !passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                throw new InvalidPasswordException();
+            }
             user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
 
