@@ -14,6 +14,7 @@ public class UserUpdateRequest {
     @Email(message = "メールアドレスの形式が正しくありません")
     private String email;            // メールアドレス
 
+    @Size(max = 127, message = "現在のパスワードは127文字以内で入力してください")
     private String currentPassword;  // 現在のパスワード（パスワード変更時に必須）
 
     @Size(min = 8, max = 127, message = "パスワードは8文字以上127文字以内で入力してください")
