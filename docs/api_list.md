@@ -40,6 +40,7 @@
 | メソッド | URL | 説明 |
 | --- | --- | --- |
 | POST | `/api/battles/queue/join` | 対戦待機キューに参加する。マッチング待ち状態になる |
-| DELETE | `/api/battles/queue/leave` | 対戦待機をキャンセルしてキューから離脱する |
+| POST | `/api/battles/queue/leave` | 対戦待機をキャンセルしてキューから離脱する（ブラウザ離脱時の通知を含む） |
+| DELETE | `/api/battles/queue/leave` | 【非推奨】対戦待機をキャンセルしてキューから離脱する（WebSocketまたはREST API） |
 | POST | `/api/battles` | キューで成立した対戦を開始する。対戦IDを発行する |
 | GET | `/api/battles/:battleId` | 指定した対戦IDの現在の対戦状態（進行中・終了など）を取得する |

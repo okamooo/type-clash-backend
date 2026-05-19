@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>対戦マッチング確認テスト</title>
+    <!-- SockJSとSTOMPのライブラリを読み込み -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <style>
+        body { background: #0f172a; color: #f8fafc; font-family: sans-serif; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .container { width: 100%; max-width: 600px; background: #1e293b; padding: 30px; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); border: 1px solid #334155; }
+        h1 { font-size: 1.5rem; margin-top: 0; color: #38bdf8; }
+        .input-group { margin-bottom: 20px; display: flex; gap: 10px; }
+        input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #0f172a; color: white; outline: none; }
+        button { padding: 10px 20px; border-radius: 6px; border: none; background: #38bdf8; color: #0f172a; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background: #7dd3fc; }
+        button:disabled { background: #475569; cursor: not-allowed; }
+        #status { margin-bottom: 10px; font-weight: bold; font-size: 0.9rem; color: #94a3b8; }
+        #log { background: #020617; padding: 15px; border-radius: 8px; height: 300px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 0.85rem; border: 1px solid #1e293b; line-height: 1.5; }
+        .log-matched { color: #4ade80; font-weight: bold; }
+        .log-error { color: #f87171; }
+        .log-info { color: #38bdf8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>BATTLE MATCHING TEST</h1>
+        
+        <div class="input-group">
+            <input type="number" id="userId" placeholder="ユーザーIDを入力 (例: 1)" value="1">
+            <button onclick="connect()" id="connectBtn">待機列に参加</button>
+        </div>
+
+        <div id="status">ステータス: 未接続</div>
+        
+        <div id="log">ログがここに表示されます...</div>
+    </div>
+
+    <script>
+        let stompClient = null;
+
+        function log(msg, className = '') {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const p = document.createElement('div');
+            if (className) p.className = className;
+            p.innerHTML = `[${time}] ${msg}`;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function connect() {
+            const userId = document.getElementById('userId').value;
+            if (!userId) {
+                alert("ユーザーIDを入力してください");
+                return;
+            }
+
+            // SockJSではなく、純粋なWebSocketを使用して接続
+            const socket = new WebSocket('ws://localhost:8080/ws-battle');
+            stompClient = Stomp.over(socket);
+
+            // デバッグログをブラウザのコンソールに出さないように設定（任意）
+            // stompClient.debug = null;
+
+            log(`ユーザー ${userId} として接続を開始します...`, 'log-info');
+
+            stompClient.connect({}, function (frame) {
+                document.getElementById('status').innerText = "ステータス: 接続済み (待機中)";
+                document.getElementById('connectBtn').disabled = true;
+                log('WebSocketサーバーに接続しました。');
+
+                // マッチング通知トピックを購読 (Subscribe)
+                const topic = '/topic/match/notification/' + userId;
+                log(`購読を開始: ${topic}`);
+                
+                stompClient.subscribe(topic, function (response) {
+                    const data = JSON.parse(response.body);
+                    log('==============================');
+                    log('MATCH FOUND!! マッチング成立', 'log-matched');
+                    log(`対戦ID: ${data.matchId}`);
+                    log(`対戦相手: ユーザー ${data.opponentId}`);
+                    log(`ステータス: ${data.status}`);
+                    log('==============================');
+                    document.getElementById('status').innerText = "ステータス: マッチング成功！";
+                });
+
+                // 待機列参加のメッセージを送信 (Send)
+                const destination = "/api/battles/queue/join";
+                log(`待機列に参加リクエストを送信: ${destination}`);
+                stompClient.send(destination, {}, JSON.stringify({'userId': userId}));
+                
+            }, function (error) {
+                log(`エラーが発生しました: ${error}`, 'log-error');
+                document.getElementById('status').innerText = "ステータス: エラー";
+            });
+        }
+    </script>
+</body>
+</html>
