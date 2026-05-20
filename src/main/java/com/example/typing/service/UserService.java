@@ -1,8 +1,8 @@
 package com.example.typing.service;
 
-import com.example.typing.dto.request.UserRegisterRequest;
 import com.example.typing.dto.request.UserUpdateRequest;
 import com.example.typing.dto.response.UserResponse;
+import com.example.typing.entity.OtpToken;
 import com.example.typing.entity.User;
 import com.example.typing.exception.EmailAlreadyExistsException;
 import com.example.typing.exception.UserNotFoundException;
@@ -45,18 +45,16 @@ public class UserService {
      * @throws EmailAlreadyExistsException メールアドレスが既に登録されている場合
      */
     @Transactional
-    public UserResponse registerUser(UserRegisterRequest request) {
+    public UserResponse registerUser(OtpToken token) {
         // メールアドレスの重複チェック
-        if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
-            throw new EmailAlreadyExistsException(request.getEmail());
+        if (userRepository.existsByEmailAndDeletedAtIsNull(token.getEmail())) {
+            throw new EmailAlreadyExistsException(token.getEmail());
         }
 
         User user = new User();
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword())); // パスワードをハッシュ化
-        user.setIconImage(request.getIconImage());
-        user.setBackgroundImage(request.getBackgroundImage());
+        user.setName(token.getName());
+        user.setEmail(token.getEmail());
+        user.setPassword(token.getPassword());
 
         return new UserResponse(userRepository.save(user));
     }
