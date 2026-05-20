@@ -1,6 +1,5 @@
 package com.example.typing.controller;
 
-// import com.example.typing.dto.request.UserRegisterRequest;
 import com.example.typing.dto.request.UserUpdateRequest;
 import com.example.typing.dto.response.UserResponse;
 import com.example.typing.service.UserService;

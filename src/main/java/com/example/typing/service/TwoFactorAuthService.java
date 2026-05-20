@@ -71,9 +71,9 @@ public class TwoFactorAuthService {
             otpTokenRepository.save(token);
             sendOtp(request.getEmail(), request.getName(), otp);
         } catch (MessagingException e) {
-            throw new RuntimeException("メール送信に失敗したため、登録処理を中断しました");
+            throw new RuntimeException("メール送信に失敗したため、登録処理を中断しました",e);
         } catch (Exception e) {
-            throw new RuntimeException("トークンの保存に失敗しました");
+            throw new RuntimeException("トークンの保存に失敗しました",e);
         }
     }
 
