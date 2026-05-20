@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: 'Helvetica Neue', Arial, sans-serif;
+      color: #333333;
+    }
+    .wrapper {
+      width: 100%;
+      padding: 40px 0;
+      background-color: #f4f4f4;
+    }
+    .container {
+      max-width: 560px;
+      margin: 0 auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+    .header {
+      background-color: #1a1a2e;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      color: #ffffff;
+      font-size: 22px;
+      letter-spacing: 2px;
+    }
+    .header span {
+      color: #e94560;
+    }
+    .body {
+      padding: 40px;
+    }
+    .body p {
+      margin: 0 0 16px;
+      font-size: 15px;
+      line-height: 1.7;
+      color: #555555;
+    }
+    .otp-box {
+      margin: 32px 0;
+      padding: 24px;
+      background-color: #1a1a2e;
+      border-radius: 8px;
+      text-align: center;
+    }
+    .otp-code {
+      font-size: 42px;
+      font-weight: bold;
+      letter-spacing: 12px;
+      color: #e94560;
+      font-family: 'Courier New', monospace;
+    }
+    .expiry-note {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #aaaaaa;
+    }
+    .warning {
+      font-size: 13px;
+      color: #999999;
+      border-top: 1px solid #eeeeee;
+      padding-top: 16px;
+      margin-top: 8px;
+    }
+    .footer {
+      background-color: #f9f9f9;
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaaaaa;
+      border-top: 1px solid #eeeeee;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <h1>TYPE <span>CLASH</span></h1>
+      </div>
+      <div class="body">
+        <p th:text="${userName} + ' さん、こんにちは！'">ユーザーさん、こんにちは！</p>
+        <p>以下の認証コードを入力してください。</p>
+
+        <div class="otp-box">
+          <div class="otp-code" th:text="${otp}">000000</div>
+          <div class="expiry-note" th:text="'有効期限：' + ${expiryMinutes} + ' 分'">有効期限：30 分</div>
+        </div>
+
+        <p class="warning">
+          このコードは一度しか使用できません。<br>
+          心当たりがない場合はこのメールを無視してください。
+        </p>
+      </div>
+      <div class="footer">
+        <p>&copy; 2026 Type Clash. All rights reserved.</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
