@@ -3,6 +3,7 @@ package com.example.typing.controller;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,11 +35,20 @@ public class AuthController {
     /**
      * 【OTP検証】
      * ワンタイムパスワードを検証する
+     * 登録用のJWTを発行
      */
     @PostMapping("/auth/otp/verify")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
-        twoFactorAuthService.verifyOtp(request.email(), request.otp());
-        return ResponseEntity.ok().build();
+        String registerToken = twoFactorAuthService.verifyOtp(request);
+        ResponseCookie cookie = ResponseCookie.from("registerToken", registerToken)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(60 * 10)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
     }
 
     /**
@@ -53,6 +63,26 @@ public class AuthController {
     public ResponseEntity<?> registOtp(@Valid @RequestBody UserRegisterRequest request){
         twoFactorAuthService.registOtpToken(request);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 【ユーザーテーブルへの本登録】
+     * @param request
+     * @return
+     */
+
+    @PostMapping("/auth/registerUser")
+    public ResponseEntity<?> registerUser(@CookieValue String registerToken) {
+        twoFactorAuthService.registUser(registerToken);
+        ResponseCookie clearCookie = ResponseCookie.from("registerToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                .build();
     }
 
 

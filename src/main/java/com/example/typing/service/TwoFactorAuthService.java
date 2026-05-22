@@ -9,13 +9,16 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.example.typing.dto.request.OtpVerifyRequest;
 import com.example.typing.dto.request.UserRegisterRequest;
 import com.example.typing.entity.OtpToken;
 import com.example.typing.exception.EmailAlreadyExistsException;
 import com.example.typing.exception.OtpAuthenticationException;
 import com.example.typing.repository.OtpTokenRepository;
 import com.example.typing.repository.UserRepository;
+import com.example.typing.security.JwtUtils;
 
+import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 
@@ -33,6 +36,7 @@ public class TwoFactorAuthService {
     private final SendMailService sendMailService;
     private final PasswordEncoder passwordEncoder;
     private final UserService userService;
+    private final JwtUtils jwtUtils;
 
     /**
      * 【一時ユーザー情報テーブルの作成】
@@ -105,10 +109,10 @@ public class TwoFactorAuthService {
      */
 
     @Transactional(noRollbackFor = OtpAuthenticationException.class)
-    public void verifyOtp(String email, String rawOtp) {
+    public String verifyOtp(OtpVerifyRequest request) {
 
         // メールアドレスの有無を確認
-        OtpToken token = otpTokenRepository.findByEmail(email)
+        OtpToken token = otpTokenRepository.findByEmail(request.email())
                 .orElseThrow(() -> new OtpAuthenticationException("認証に失敗しました。"));
 
         // 有効期限が切れていないか確認
@@ -117,7 +121,7 @@ public class TwoFactorAuthService {
         }
 
         // ワンタイムパスワードがマッチしているか確認
-        if (!passwordEncoder.matches(rawOtp, token.getOtpHash())) {
+        if (!passwordEncoder.matches(request.otp(), token.getOtpHash())) {
             token.setFailCount(token.getFailCount() + 1);
             if (token.getFailCount() >= MAX_FAIL_COUNT) {
                 otpTokenRepository.delete(token);
@@ -125,6 +129,23 @@ public class TwoFactorAuthService {
             }
             throw new OtpAuthenticationException("認証に失敗しました。");
         }
+
+        // 検証成功：scope=REGISTER の短命JWT（10分）を発行
+        return jwtUtils.generateRegisterToken(token.getEmail());
+    }
+
+    public void registUser(String registerToken) {
+        // JWTの署名・有効期限・scope=REGISTER を検証してメールアドレスを取得
+        String email;
+        try {
+            email = jwtUtils.getEmailFromRegisterToken(registerToken);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new OtpAuthenticationException("無効なトークンです。");
+        }
+
+        // OtpTokenからユーザー情報を取得
+        OtpToken token = otpTokenRepository.findByEmail(email)
+                .orElseThrow(() -> new OtpAuthenticationException("無効なトークンです。"));
 
         // userテーブルに本登録
         userService.registerUser(token);

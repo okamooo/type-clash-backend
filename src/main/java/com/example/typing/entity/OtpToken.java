@@ -26,7 +26,7 @@ public class OtpToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id; //id
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String name; //名前
 
     @Column(nullable = false, unique = true)
