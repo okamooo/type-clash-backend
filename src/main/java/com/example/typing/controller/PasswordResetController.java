@@ -89,7 +89,7 @@ public class PasswordResetController {
      * @param request 新しいパスワード情報
      * @return 200 OK
      */
-    @PostMapping("/reset")
+    @PostMapping("/new")
     public ResponseEntity<Void> resetPassword(
             @CookieValue(name = "passwordResetToken", required = false) String passwordResetToken,
             @Valid @RequestBody PasswordResetConfirmRequest request) {
