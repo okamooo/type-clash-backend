@@ -15,6 +15,7 @@ import com.example.typing.dto.request.PasswordResetRequest;
 import com.example.typing.entity.OtpToken;
 import com.example.typing.entity.User;
 import com.example.typing.exception.OtpAuthenticationException;
+import com.example.typing.exception.UserNotFoundException;
 import com.example.typing.repository.OtpTokenRepository;
 import com.example.typing.repository.UserRepository;
 import com.example.typing.security.JwtUtils;
@@ -47,9 +48,7 @@ public class PasswordResetService {
      */
     public void requestReset(PasswordResetRequest request) {
         User user = userRepository.findByEmailAndDeletedAtIsNull(request.email())
-                .orElse(null);
-        if (user == null)
-            return;
+                .orElseThrow(() -> new UserNotFoundException(request.email()));
 
         String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
 
