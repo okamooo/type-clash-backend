@@ -60,7 +60,7 @@ public class AuthController {
      */
 
     @PostMapping("/auth/otp/register")
-    public ResponseEntity<?> registOtp(@Valid @RequestBody UserRegisterRequest request){
+    public ResponseEntity<?> registerOtp(@Valid @RequestBody UserRegisterRequest request){
         twoFactorAuthService.registOtpToken(request);
         return ResponseEntity.ok().build();
     }
