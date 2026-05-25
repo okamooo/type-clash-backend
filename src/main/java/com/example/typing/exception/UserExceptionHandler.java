@@ -14,6 +14,14 @@ import java.util.Map;
 public class UserExceptionHandler {
 
     /**
+     * 400 現在のパスワードが正しくない
+     */
+    @ExceptionHandler(InvalidPasswordException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidPasswordException(InvalidPasswordException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    /**
      * 401 認証失敗
      */
     @ExceptionHandler(AuthenticationFailedException.class)
@@ -55,8 +63,7 @@ public class UserExceptionHandler {
                 "timestamp", LocalDateTime.now().toString(),
                 "status", status.value(),
                 "error", status.getReasonPhrase(),
-                "message", message
-        );
+                "message", message);
         return ResponseEntity.status(status).body(body);
     }
 }
