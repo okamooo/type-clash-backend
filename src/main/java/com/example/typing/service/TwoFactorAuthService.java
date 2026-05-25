@@ -45,13 +45,14 @@ public class TwoFactorAuthService {
      * @param request
      */
     public void registOtpToken(UserRegisterRequest request) {
-        String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
-        String hashedOtp = passwordEncoder.encode(otp);
 
         // Userテーブルのメールアドレスの重複チェック
         if (userRepository.existsByEmailAndDeletedAtIsNull(request.getEmail())) {
             throw new EmailAlreadyExistsException(request.getEmail());
         }
+
+        String otp = String.format("%06d", RANDOM.nextInt(1_000_000));
+        String hashedOtp = passwordEncoder.encode(otp);
 
         Optional<OtpToken> existingToken = otpTokenRepository.findByEmail(request.getEmail());
 
@@ -72,8 +73,8 @@ public class TwoFactorAuthService {
         token.setFailCount(0);
 
         try {
-            otpTokenRepository.save(token);
             sendOtp(request.getEmail(), request.getName(), otp);
+            otpTokenRepository.save(token);
         } catch (MessagingException e) {
             throw new RuntimeException("メール送信に失敗したため、登録処理を中断しました",e);
         } catch (Exception e) {
@@ -104,8 +105,7 @@ public class TwoFactorAuthService {
      * 送られてきたワンタイムパスワードを確認し、
      * 正常であればUserテーブルに本登録する。
      * 
-     * @param email
-     * @param rawOtp
+     * @param request OTP検証情報
      */
 
     @Transactional(noRollbackFor = OtpAuthenticationException.class)
@@ -117,6 +117,7 @@ public class TwoFactorAuthService {
 
         // 有効期限が切れていないか確認
         if (LocalDateTime.now().isAfter(token.getExpiry())) {
+            otpTokenRepository.delete(token);
             throw new OtpAuthenticationException("認証に失敗しました。");
         }
 
