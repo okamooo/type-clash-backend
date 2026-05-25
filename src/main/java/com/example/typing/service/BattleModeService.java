@@ -15,10 +15,15 @@ public class BattleModeService {
 
     private final MagicWordRepository magicWordRepository;
     private final BattleResultRepository battleResultRepository;
+    private final ActiveBattleService activeBattleService;
 
-    public BattleModeService(MagicWordRepository magicWordRepository, BattleResultRepository battleResultRepository) {
+    public BattleModeService(
+            MagicWordRepository magicWordRepository,
+            BattleResultRepository battleResultRepository,
+            ActiveBattleService activeBattleService) {
         this.magicWordRepository = magicWordRepository;
         this.battleResultRepository = battleResultRepository;
+        this.activeBattleService = activeBattleService;
     }
 
     public List<MagicWords> getAllMagicWords() {
@@ -26,7 +31,7 @@ public class BattleModeService {
     }
 
     /**
-     * マッチング成立時に対戦レコードを作成し、matchId（= 主キー）を返す
+     * 両者が「たたかう」を選択した時点で対戦レコードを作成し、matchId（= 主キー）を返す
      */
     @Transactional
     public Long createMatch(Long player1Id, Long player2Id) {
@@ -62,14 +67,18 @@ public class BattleModeService {
                 }
             }
             existing.setFinishedAt(LocalDateTime.now());
-            return battleResultRepository.save(existing);
+            BattleResult saved = battleResultRepository.save(existing);
+            activeBattleService.unregisterBattle(saved.getMatchId());
+            return saved;
         }
 
         resolveWinnerFromScores(result);
         if (result.getFinishedAt() == null) {
             result.setFinishedAt(LocalDateTime.now());
         }
-        return battleResultRepository.save(result);
+        BattleResult saved = battleResultRepository.save(result);
+        activeBattleService.unregisterBattle(saved.getMatchId());
+        return saved;
     }
 
     private void mergeStats(BattleResult existing, BattleResult incoming) {

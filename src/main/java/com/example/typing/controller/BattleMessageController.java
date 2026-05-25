@@ -1,8 +1,10 @@
 package com.example.typing.controller;
 
 import com.example.typing.dto.BattleMessage;
+import com.example.typing.service.WebSocketSessionRegistry;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
@@ -10,9 +12,13 @@ import org.springframework.stereotype.Controller;
 public class BattleMessageController {
 
     private final SimpMessagingTemplate messagingTemplate;
+    private final WebSocketSessionRegistry sessionRegistry;
 
-    public BattleMessageController(SimpMessagingTemplate messagingTemplate) {
+    public BattleMessageController(
+            SimpMessagingTemplate messagingTemplate,
+            WebSocketSessionRegistry sessionRegistry) {
         this.messagingTemplate = messagingTemplate;
+        this.sessionRegistry = sessionRegistry;
     }
 
     /**
@@ -23,9 +29,13 @@ public class BattleMessageController {
     @MessageMapping("/battles/{matchId}/update")
     public void updateBattleStatus(
             @DestinationVariable Long matchId,
-            BattleMessage message) {
+            BattleMessage message,
+            SimpMessageHeaderAccessor headerAccessor) {
 
-        // 届いたメッセージを、同じmatchIdのトピックを購読している全員に転送する
+        if (headerAccessor != null && headerAccessor.getSessionId() != null && message.getUserId() != null) {
+            sessionRegistry.bind(headerAccessor.getSessionId(), message.getUserId());
+        }
+
         messagingTemplate.convertAndSend("/topic/battle/" + matchId, message);
     }
 }
