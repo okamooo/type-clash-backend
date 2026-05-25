@@ -43,6 +43,19 @@ public class MatchMakingController {
     }
 
     /**
+     * 対戦準備完了を報告する
+     * 送信先: /api/battles/ready
+     */
+    @MessageMapping("/battles/ready")
+    public void handleReady(@Payload Map<String, Object> payload) {
+        if (payload.containsKey("matchId") && payload.containsKey("userId")) {
+            Long matchId = Long.valueOf(payload.get("matchId").toString());
+            Long userId = Long.valueOf(payload.get("userId").toString());
+            matchMakingService.playerReady(matchId, userId);
+        }
+    }
+
+    /**
      * マッチング待機列から離脱するメソッド (REST用: ブラウザ終了時の sendBeacon 等)
      * 送信先: /api/battles/queue/leave
      */

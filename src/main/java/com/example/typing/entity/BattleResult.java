@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 @Table(name = "battle_results")
 public class BattleResult {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @Column(name = "match_id")
+    private Long matchId;
 
     @Column(name = "player1_id")
     private Long player1Id;
@@ -32,6 +32,18 @@ public class BattleResult {
 
     @Column(name = "player2_accuracy_rate")
     private Integer player2AccuracyRate;
+
+    @Column(name = "player1_typed_chars")
+    private Integer player1TypedChars;
+
+    @Column(name = "player1_miss_count")
+    private Integer player1MissCount;
+
+    @Column(name = "player2_typed_chars")
+    private Integer player2TypedChars;
+
+    @Column(name = "player2_miss_count")
+    private Integer player2MissCount;
 
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
