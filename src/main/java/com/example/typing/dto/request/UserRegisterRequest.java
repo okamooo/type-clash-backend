@@ -20,7 +20,4 @@ public class UserRegisterRequest {
     @NotBlank(message = "パスワードは必須です")
     @Size(min = 8, max = 127, message = "パスワードは8文字以上127文字以内で入力してください")
     private String password;         // パスワード
-
-    private String iconImage;        // アイコン画像URL
-    private Integer backgroundImage; // 背景画像ID（0 or 1）
 }

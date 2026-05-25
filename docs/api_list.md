@@ -4,9 +4,15 @@
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| POST | `/api/users/register` | 新規ユーザーを登録する。名前・メールアドレス・パスワード等を受け取りアカウントを作成する |
 | POST | `/api/auth/login` | メールアドレスとパスワードでログインする。成功時にセッションまたはトークンを返す |
 | POST | `/api/auth/logout` | ログイン中のユーザーをログアウトする。セッションまたはトークンを無効化する |
+| POST | `/api/auth/otp/register` | ユーザー登録時にワンタイムパスワードをメールに送り、otp_tokensテーブルに一時保存する |
+| POST | `/api/auth/otp/verify` | ワンタイムパスワードを検証する。成功時に `registerToken`（scope=REGISTER・10分有効）をhttpOnly Cookieにセットする |
+| POST | `/api/auth/registerUser` | `registerToken` Cookie を検証し、otp_tokensのデータを使ってusersテーブルへ本登録する |
+| POST | `/api/auth/password-reset/request` | パスワード再設定用の認証コードをメールに送り、otp_tokensテーブルに一時保存する |
+| POST | `/api/auth/password-reset/verify` | パスワード再設定用の認証コードを検証する。成功時に `passwordResetToken`（scope=PASSWORD_RESET・10分有効）をhttpOnly Cookieにセットする |
+| GET | `/api/auth/password-reset/verify-session` | `passwordResetToken` Cookie を検証し、パスワード再設定セッションが有効か確認する |
+| POST | `/api/auth/password-reset/new` | `passwordResetToken` Cookie を検証し、新しいパスワードへ更新する。成功時にCookieを削除する |
 | GET | `/api/users/:userId` | 指定したユーザーIDのユーザー情報を取得する |
 | PATCH | `/api/users/:userId` | 指定したユーザーの情報（名前・メールアドレス・パスワード・アイコン画像）を更新する |
 | DELETE | `/api/users/:userId` | 指定したユーザーを論理削除する（deleted_atに削除日時をセットする） |
