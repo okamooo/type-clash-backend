@@ -32,7 +32,7 @@ public class OtpToken {
     @Column(nullable = false, unique = true)
     private String email; //メールアドレス
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password; // パスワード
 
     @Column(name = "otp_hash", nullable = false)

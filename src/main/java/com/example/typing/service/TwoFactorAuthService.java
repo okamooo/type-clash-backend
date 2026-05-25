@@ -126,7 +126,7 @@ public class TwoFactorAuthService {
             token.setFailCount(token.getFailCount() + 1);
             if (token.getFailCount() >= MAX_FAIL_COUNT) {
                 otpTokenRepository.delete(token);
-                throw new OtpAuthenticationException("試行回数の上限に達しました。再度ワンタイムパスワードを発行してください。");
+                throw new OtpAuthenticationException("試行回数の上限に達しました。再度認証コードを発行してください。");
             }
             throw new OtpAuthenticationException("認証に失敗しました。");
         }
