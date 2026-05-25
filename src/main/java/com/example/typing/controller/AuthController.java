@@ -3,18 +3,21 @@ package com.example.typing.controller;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import org.springframework.validation.BindingResult;
-import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.typing.dto.request.LoginRequest;
+import com.example.typing.dto.request.OtpVerifyRequest;
+import com.example.typing.dto.request.UserRegisterRequest;
 import com.example.typing.dto.response.LoginResponse;
 import com.example.typing.entity.User;
 import com.example.typing.security.JwtUtils;
 import com.example.typing.service.AuthService;
+import com.example.typing.service.TwoFactorAuthService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -25,6 +28,64 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class AuthController {
     private final JwtUtils jwtUtils;
     private final AuthService authService;
+    private final TwoFactorAuthService twoFactorAuthService;
+
+
+
+    /**
+     * 【OTP検証】
+     * ワンタイムパスワードを検証する
+     * 登録用のJWTを発行
+     */
+    @PostMapping("/auth/otp/verify")
+    public ResponseEntity<?> verifyOtp(@Valid @RequestBody OtpVerifyRequest request) {
+        String registerToken = twoFactorAuthService.verifyOtp(request);
+        ResponseCookie cookie = ResponseCookie.from("registerToken", registerToken)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(60 * 10)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, cookie.toString())
+                .build();
+    }
+
+    /**
+     * 【OTPとユーザー情報の一時保存】
+     * OTPとユーザー情報をデータベースに保存後
+     * ワンタイムパスワードをメールで送る
+     * @param request
+     * @return
+     */
+
+    @PostMapping("/auth/otp/register")
+    public ResponseEntity<?> registerOtp(@Valid @RequestBody UserRegisterRequest request){
+        twoFactorAuthService.registOtpToken(request);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 【ユーザーテーブルへの本登録】
+     * @param request
+     * @return
+     */
+
+    @PostMapping("/auth/registerUser")
+    public ResponseEntity<?> registerUser(@CookieValue String registerToken) {
+        twoFactorAuthService.registUser(registerToken);
+        ResponseCookie clearCookie = ResponseCookie.from("registerToken", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .build();
+        return ResponseEntity.ok()
+                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+                .build();
+    }
+
+
 
     /**
      * 【ログアウト】
@@ -49,18 +110,14 @@ public class AuthController {
     /**
      * 【ログイン機能】
      * メールアドレスとパスワードからログインを行い、
-     * 成功した際にユーザー名を返却する
-     * トークンはCookieにセット
-     * 
-     * @param request
-     * @param result
-     * @return
+     * 成功した際にユーザー名を返却する。
+     * トークンはCookieにセットする。
+     *
+     * @param request ログインリクエスト（メールアドレス・パスワード）
+     * @return ログイン成功時はユーザー情報、失敗時は 401
      */
     @PostMapping("/auth/login")
-    public ResponseEntity<?> login(@Validated @RequestBody LoginRequest request, BindingResult result) {
-        if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(result.getAllErrors());
-        }
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
 
         User user = authService.authenticate(request);
         String token = jwtUtils.generateToken(user.getId());

@@ -57,6 +57,15 @@ public class UserExceptionHandler {
         return buildResponse(HttpStatus.BAD_REQUEST, message);
     }
 
+    /**
+     * 
+     * 400　ワンタイムパスワード認証時のエラー
+     */
+    @ExceptionHandler(OtpAuthenticationException.class)
+    public ResponseEntity<Map<String, Object>> handleOtpAuthenticationException(OtpAuthenticationException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     // レスポンスボディの共通生成メソッド
     private ResponseEntity<Map<String, Object>> buildResponse(HttpStatus status, String message) {
         Map<String, Object> body = Map.of(

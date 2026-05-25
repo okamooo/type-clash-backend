@@ -4,9 +4,11 @@
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| POST | `/api/users/register` | 新規ユーザーを登録する。名前・メールアドレス・パスワード等を受け取りアカウントを作成する |
 | POST | `/api/auth/login` | メールアドレスとパスワードでログインする。成功時にセッションまたはトークンを返す |
 | POST | `/api/auth/logout` | ログイン中のユーザーをログアウトする。セッションまたはトークンを無効化する |
+| POST | `/api/auth/otp/register` | ユーザー登録時にワンタイムパスワードをメールに送り、otp_tokensテーブルに一時保存する |
+| POST | `/api/auth/otp/verify` | ワンタイムパスワードを検証する。成功時に `registerToken`（scope=REGISTER・10分有効）をhttpOnly Cookieにセットする |
+| POST | `/api/auth/registerUser` | `registerToken` Cookie を検証し、otp_tokensのデータを使ってusersテーブルへ本登録する |
 | GET | `/api/users/:userId` | 指定したユーザーIDのユーザー情報を取得する |
 | PATCH | `/api/users/:userId` | 指定したユーザーの情報（名前・メールアドレス・パスワード・アイコン画像）を更新する |
 | DELETE | `/api/users/:userId` | 指定したユーザーを論理削除する（deleted_atに削除日時をセットする） |

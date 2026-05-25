@@ -31,11 +31,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .cors(Customizer.withDefaults()) //CorsConfigurationSourceを使用
+            .cors(Customizer.withDefaults())
             .csrf(csrf -> csrf.disable())
             .headers(headers -> headers
                 .frameOptions(frameOptions -> frameOptions.sameOrigin())
             ) //h2-consoleを使用できるように設定
+
+
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().permitAll()
             );
