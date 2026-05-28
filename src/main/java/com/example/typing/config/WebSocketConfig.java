@@ -7,6 +7,7 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import com.example.typing.security.JwtHandshakeInterceptor;
 import com.example.typing.security.StompAuthChannelInterceptor;
 
 @Configuration
@@ -14,9 +15,13 @@ import com.example.typing.security.StompAuthChannelInterceptor;
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
+    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
 
-    public WebSocketConfig(StompAuthChannelInterceptor stompAuthChannelInterceptor) {
+    public WebSocketConfig(
+            StompAuthChannelInterceptor stompAuthChannelInterceptor,
+            JwtHandshakeInterceptor jwtHandshakeInterceptor) {
         this.stompAuthChannelInterceptor = stompAuthChannelInterceptor;
+        this.jwtHandshakeInterceptor = jwtHandshakeInterceptor;
     }
 
     @Override
@@ -33,6 +38,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws-battle")
+                .addInterceptors(jwtHandshakeInterceptor)
                 .setAllowedOriginPatterns("*");
     }
 }

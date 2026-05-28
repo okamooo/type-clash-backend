@@ -68,8 +68,8 @@ public class MatchMakingService {
             activeMatches.put(player2, player1);
         } catch (Exception e) {
             log.error("Failed to notify players. Requeueing both.", e);
-            joinQueue(player1);
-            joinQueue(player2);
+            waitingPlayers.add(player1);
+            waitingPlayers.add(player2);
         }
     }
 
