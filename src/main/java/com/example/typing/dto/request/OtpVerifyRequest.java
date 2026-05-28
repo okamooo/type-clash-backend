@@ -12,6 +12,6 @@ import jakarta.validation.constraints.Size;
  * @param otp   ユーザーが入力した 6 桁のワンタイムパスワード
  */
 public record OtpVerifyRequest(
-        @NotBlank @Email @Pattern(regexp = "^[^\\s　]+$", message = "{validation.email.no-space}") String email,
-        @NotBlank @Pattern(regexp = "^[^\\s　]+$", message = "{validation.otp.no-space}") @Size(min = 6, max = 6,message = "{validation.otp.size}") String otp) {
+        @NotBlank @Email @Pattern(regexp = "^[^\\s　]*$", message = "{validation.email.no-space}") String email,
+        @NotBlank @Pattern(regexp = "^[^\\s　]*$", message = "{validation.otp.no-space}") @Size(min = 6, max = 6,message = "{validation.otp.size}") String otp) {
 }

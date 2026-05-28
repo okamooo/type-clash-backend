@@ -12,6 +12,6 @@ import jakarta.validation.constraints.Pattern;
 public record PasswordResetRequest(
         @NotBlank
         @Email
-        @Pattern(regexp = "^[^\\s　]+$", message = "{validation.email.no-space}")
+        @Pattern(regexp = "^[^\\s　]*$", message = "{validation.email.no-space}")
         String email) {
 }
