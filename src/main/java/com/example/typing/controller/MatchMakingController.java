@@ -1,16 +1,19 @@
 package com.example.typing.controller;
 
-import com.example.typing.service.ActiveBattleService;
-import com.example.typing.service.MatchMakingService;
-import com.example.typing.service.WebSocketSessionRegistry;
+import java.security.Principal;
+
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Map;
+import com.example.typing.dto.request.BattleQueueRequest;
+import com.example.typing.service.ActiveBattleService;
+import com.example.typing.service.MatchMakingService;
+import com.example.typing.service.WebSocketSessionRegistry;
 
 @RestController
 public class MatchMakingController {
@@ -33,22 +36,28 @@ public class MatchMakingController {
      * 送信先: /api/battles/queue/join
      */
     @MessageMapping("/battles/queue/join")
-    public void joinQueue(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        if (payload.containsKey("userId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
+    public void joinQueue(
+            @Payload(required = false) BattleQueueRequest request,
+            Principal principal,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
             bindSession(headerAccessor, userId);
             matchMakingService.joinQueue(userId);
         }
     }
 
     /**
-     * マッチング待機列から離脱するメソッド (WebSocket用)
+     * マッチング待機列から離脱する (WebSocket用)
      * 送信先: /api/battles/queue/leave
      */
     @MessageMapping("/battles/queue/leave")
-    public void leaveQueue(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        if (payload.containsKey("userId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
+    public void leaveQueue(
+            @Payload(required = false) BattleQueueRequest request,
+            Principal principal,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
             bindSession(headerAccessor, userId);
             matchMakingService.leaveQueue(userId);
         }
@@ -59,11 +68,30 @@ public class MatchMakingController {
      * 送信先: /api/battles/ready
      */
     @MessageMapping("/battles/ready")
-    public void handleReady(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        if (payload.containsKey("userId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
+    public void handleReady(
+            @Payload(required = false) BattleQueueRequest request,
+            Principal principal,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
             bindSession(headerAccessor, userId);
             matchMakingService.playerReady(userId);
+        }
+    }
+
+    /**
+     * 成立済み対戦から離脱する (WebSocket用)
+     * 送信先: /api/battles/match/leave
+     */
+    @MessageMapping("/battles/match/leave")
+    public void leaveMatch(
+            @Payload(required = false) BattleQueueRequest request,
+            Principal principal,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
+            bindSession(headerAccessor, userId);
+            matchMakingService.leaveMatch(userId);
         }
     }
 
@@ -72,23 +100,37 @@ public class MatchMakingController {
      * 送信先: /api/battles/forfeit
      */
     @MessageMapping("/battles/forfeit")
-    public void forfeit(@Payload Map<String, Object> payload, SimpMessageHeaderAccessor headerAccessor) {
-        if (payload.containsKey("userId") && payload.containsKey("matchId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            Long matchId = Long.valueOf(payload.get("matchId").toString());
-            bindSession(headerAccessor, userId);
-            activeBattleService.forfeit(userId, matchId);
+    public void forfeit(
+            @Payload(required = false) BattleQueueRequest request,
+            Principal principal,
+            SimpMessageHeaderAccessor headerAccessor) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId == null) {
+            return;
+        }
+        bindSession(headerAccessor, userId);
+        activeBattleService.forfeit(userId, null);
+    }
+
+    /**
+     * マッチング待機列から離脱する (REST用: ブラウザ離脱時の sendBeacon 等)
+     */
+    @PostMapping("/api/battles/queue/leave")
+    public void leaveQueueRest(Principal principal) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
+            matchMakingService.leaveQueue(userId);
         }
     }
 
     /**
-     * マッチング待機列から離脱するメソッド (REST用: ブラウザ終了時の sendBeacon 等)
+     * 成立済み対戦から離脱する (REST用: ブラウザ離脱時の sendBeacon 等)
      */
-    @PostMapping("/api/battles/queue/leave")
-    public void leaveQueueRest(@RequestBody Map<String, Object> payload) {
-        if (payload.containsKey("userId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            matchMakingService.leaveQueue(userId);
+    @PostMapping("/api/battles/match/leave")
+    public void leaveMatchRest(Principal principal) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
+            matchMakingService.leaveMatch(userId);
         }
     }
 
@@ -96,17 +138,35 @@ public class MatchMakingController {
      * 対戦中の離脱 (REST用: ブラウザ終了時の sendBeacon 等)
      */
     @PostMapping("/api/battles/forfeit")
-    public void forfeitRest(@RequestBody Map<String, Object> payload) {
-        if (payload.containsKey("userId") && payload.containsKey("matchId")) {
-            Long userId = Long.valueOf(payload.get("userId").toString());
-            Long matchId = Long.valueOf(payload.get("matchId").toString());
-            activeBattleService.forfeit(userId, matchId);
+    public void forfeitRest(Principal principal) {
+        Long userId = getAuthenticatedUserId(principal);
+        if (userId != null) {
+            activeBattleService.forfeit(userId, null);
         }
     }
 
     private void bindSession(SimpMessageHeaderAccessor headerAccessor, Long userId) {
         if (headerAccessor != null && headerAccessor.getSessionId() != null) {
             sessionRegistry.bind(headerAccessor.getSessionId(), userId);
+        }
+    }
+
+    private Long getAuthenticatedUserId(Principal principal) {
+        if (principal == null) {
+            return null;
+        }
+        if (principal instanceof Authentication authentication
+                && authentication.getPrincipal() instanceof Long userId) {
+            return userId;
+        }
+        if (principal instanceof UsernamePasswordAuthenticationToken token
+                && token.getPrincipal() instanceof Long userId) {
+            return userId;
+        }
+        try {
+            return Long.parseLong(principal.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

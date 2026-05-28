@@ -5,12 +5,15 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
 public class MatchMakingService {
 
+    private static final Logger log = LoggerFactory.getLogger(MatchMakingService.class);
     private static final long BATTLE_COUNTDOWN_MS = 3_000L;
     private static final long BATTLE_DURATION_MS = 60_000L;
 
@@ -40,8 +43,12 @@ public class MatchMakingService {
      * 2人揃ったらペアを組む（matchId は両者 ready まで発行しない）。
      */
     public synchronized void joinQueue(long userId) {
-        System.out.println("DEBUG: [Service] User " + userId + " attempting to join queue.");
-        if (waitingPlayers.contains(userId) || activeMatches.containsKey(userId)) {
+        log.debug("User {} attempting to join queue.", userId);
+        if (waitingPlayers.contains(userId)) {
+            return;
+        }
+        if (activeMatches.containsKey(userId)) {
+            log.warn("User {} is already in a match. Ignoring joinQueue request.", userId);
             return;
         }
 
@@ -52,7 +59,7 @@ public class MatchMakingService {
             Long player2 = waitingPlayers.poll();
 
             if (player1 != null && player2 != null) {
-                System.out.println("DEBUG: [Service] Match found! " + player1 + " vs " + player2);
+                log.debug("Match found! {} vs {}", player1, player2);
 
                 activeMatches.put(player1, player2);
                 activeMatches.put(player2, player1);
@@ -61,6 +68,9 @@ public class MatchMakingService {
 
                 notifyMatched(player1, player2, "player1");
                 notifyMatched(player2, player1, "player2");
+            } else if (player1 != null) {
+                waitingPlayers.add(player1);
+                break;
             }
         }
     }
@@ -81,13 +91,13 @@ public class MatchMakingService {
     public synchronized void playerReady(long userId) {
         Long opponentId = activeMatches.get(userId);
         if (opponentId == null) {
-            System.out.println("DEBUG: [Service] User " + userId + " ready but not in active pair.");
+            log.debug("User {} ready but not in active pair.", userId);
             return;
         }
 
         String key = pairKey(userId, opponentId);
         readyPlayersPerPair.computeIfAbsent(key, k -> ConcurrentHashMap.newKeySet()).add(userId);
-        System.out.println("DEBUG: [Service] Pair " + key + ": User " + userId + " is READY.");
+        log.debug("Pair {}: User {} is READY.", key, userId);
 
         if (readyPlayersPerPair.get(key).size() < 2) {
             return;
@@ -100,7 +110,7 @@ public class MatchMakingService {
         activeBattleService.registerBattle(matchId, player1Id, player2Id);
         long battleEndsAt = System.currentTimeMillis() + BATTLE_COUNTDOWN_MS + BATTLE_DURATION_MS;
 
-        System.out.println("DEBUG: [Service] Pair " + key + ": Both READY. Starting match " + matchId);
+        log.debug("Pair {}: Both READY. Starting match {}", key, matchId);
 
         notifyStartBattle(userId, matchId, battleEndsAt);
         notifyStartBattle(opponentId, matchId, battleEndsAt);
@@ -138,13 +148,18 @@ public class MatchMakingService {
     }
 
     /**
-     * ユーザーを待機列・ペアから削除する（キャンセル・離脱時）
+     * 待機列からの離脱のみ（activeMatches は触らない）
      */
-    public void leaveQueue(long userId) {
-        System.out.println("DEBUG: [Service] User " + userId + " leave queue request.");
-
+    public synchronized void leaveQueue(long userId) {
+        log.debug("User {} leave queue request.", userId);
         waitingPlayers.remove(userId);
+    }
 
+    /**
+     * 成立済み対戦（マッチング〜ready 前）からの離脱
+     */
+    public synchronized void leaveMatch(long userId) {
+        log.debug("User {} leave match request.", userId);
         Long opponentId = activeMatches.remove(userId);
         if (opponentId != null) {
             activeMatches.remove(opponentId);
@@ -152,11 +167,11 @@ public class MatchMakingService {
             pendingRoles.remove(opponentId);
             readyPlayersPerPair.remove(pairKey(userId, opponentId));
 
-            System.out.println("DEBUG: [Service] Notifying opponent " + opponentId + " about cancellation.");
+            log.debug("Notifying opponent {} about opponent left.", opponentId);
 
             messagingTemplate.convertAndSend(
                     "/topic/match/notification/" + opponentId,
-                    (Object) Map.of("status", "CANCELLED"));
+                    (Object) Map.of("status", "OPPONENT_LEFT"));
 
             joinQueue(opponentId);
         }
