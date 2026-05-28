@@ -71,7 +71,10 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("http://localhost:3000", "http://127.0.0.1:3000")); // アクセスを許可するURL
+        config.setAllowedOrigins(List.of(
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://52.198.181.53")); // アクセスを許可するURL
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // 許可するHTTPメソッド
         config.setAllowedHeaders(List.of("*")); // 許可するHTTPヘッダー
         config.setAllowCredentials(true); // クッキー（Cookie）や認証情報
