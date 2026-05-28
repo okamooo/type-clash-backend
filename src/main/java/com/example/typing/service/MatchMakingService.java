@@ -58,30 +58,28 @@ public class MatchMakingService {
             Long player1 = waitingPlayers.poll();
             Long player2 = waitingPlayers.poll();
 
-            if (player1 != null && player2 != null) {
-                log.debug("Match found! {} vs {}", player1, player2);
-
-                activeMatches.put(player1, player2);
-                activeMatches.put(player2, player1);
-                pendingRoles.put(player1, "player1");
-                pendingRoles.put(player2, "player2");
-
-                notifyMatched(player1, player2, "player1");
-                notifyMatched(player2, player1, "player2");
-            } else if (player1 != null) {
+            if (player1 == null) {
+                break;
+            }
+            if (player2 == null) {
                 waitingPlayers.add(player1);
                 break;
             }
-        }
-    }
 
-    private void notifyMatched(Long userId, Long opponentId, String role) {
-        messagingTemplate.convertAndSend(
-                "/topic/match/notification/" + userId,
-                (Object) Map.of(
-                        "opponentId", opponentId,
-                        "status", "MATCHED",
-                        "role", role));
+            log.debug("Match found! {} vs {}", player1, player2);
+
+            // 案2: 両者への MATCHED 通知成功後にのみ activeMatches へコミット
+            try {
+                notifyMatched(player1, player2, "player1");
+                notifyMatched(player2, player1, "player2");
+            } catch (Exception e) {
+                log.error("MATCHED notify failed for {} vs {}, requeueing both.", player1, player2, e);
+                rollbackMatchedNotify(player1, player2);
+                continue;
+            }
+
+            commitPair(player1, player2);
+        }
     }
 
     /**
@@ -112,14 +110,68 @@ public class MatchMakingService {
 
         log.debug("Pair {}: Both READY. Starting match {}", key, matchId);
 
-        notifyStartBattle(userId, matchId, battleEndsAt);
-        notifyStartBattle(opponentId, matchId, battleEndsAt);
+        // 案1: START_BATTLE 通知失敗時は DB / ActiveBattle / activeMatches を巻き戻す
+        try {
+            notifyStartBattle(userId, matchId, battleEndsAt);
+            notifyStartBattle(opponentId, matchId, battleEndsAt);
+        } catch (Exception e) {
+            log.error("START_BATTLE notify failed for match {}, rolling back.", matchId, e);
+            rollbackStartBattle(player1Id, player2Id, matchId);
+            return;
+        }
 
         readyPlayersPerPair.remove(key);
         pendingRoles.remove(userId);
         pendingRoles.remove(opponentId);
         activeMatches.remove(userId);
         activeMatches.remove(opponentId);
+    }
+
+    private void commitPair(long player1, long player2) {
+        activeMatches.put(player1, player2);
+        activeMatches.put(player2, player1);
+        pendingRoles.put(player1, "player1");
+        pendingRoles.put(player2, "player2");
+    }
+
+    private void abortPair(long player1, long player2) {
+        activeMatches.remove(player1);
+        activeMatches.remove(player2);
+        pendingRoles.remove(player1);
+        pendingRoles.remove(player2);
+        readyPlayersPerPair.remove(pairKey(player1, player2));
+    }
+
+    private void rollbackMatchedNotify(long player1, long player2) {
+        notifyCancelled(player1);
+        notifyCancelled(player2);
+        requeuePlayers(player1, player2);
+    }
+
+    private void rollbackStartBattle(long player1Id, long player2Id, long matchId) {
+        activeBattleService.unregisterBattle(matchId);
+        battleModeService.cancelMatch(matchId);
+        abortPair(player1Id, player2Id);
+        notifyCancelled(player1Id);
+        notifyCancelled(player2Id);
+        requeuePlayers(player1Id, player2Id);
+    }
+
+    /**
+     * 通知失敗時の再キュー。joinQueue() は呼ばない（即再マッチループ防止）。
+     */
+    private void requeuePlayers(long player1, long player2) {
+        waitingPlayers.add(player1);
+        waitingPlayers.add(player2);
+    }
+
+    private void notifyMatched(Long userId, Long opponentId, String role) {
+        messagingTemplate.convertAndSend(
+                "/topic/match/notification/" + userId,
+                (Object) Map.of(
+                        "opponentId", opponentId,
+                        "status", "MATCHED",
+                        "role", role));
     }
 
     private void notifyStartBattle(Long userId, Long matchId, long battleEndsAt) {
@@ -129,6 +181,16 @@ public class MatchMakingService {
                         "status", "START_BATTLE",
                         "matchId", matchId,
                         "battleEndsAt", battleEndsAt));
+    }
+
+    private void notifyCancelled(long userId) {
+        try {
+            messagingTemplate.convertAndSend(
+                    "/topic/match/notification/" + userId,
+                    (Object) Map.of("status", "CANCELLED"));
+        } catch (Exception e) {
+            log.warn("Failed to send CANCELLED to user {}", userId, e);
+        }
     }
 
     private Long resolvePlayer1Id(long userId, long opponentId) {

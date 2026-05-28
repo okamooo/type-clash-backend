@@ -48,6 +48,21 @@ public class BattleModeService {
     }
 
     /**
+     * START_BATTLE 通知失敗時など、未完了の対戦レコードを削除する
+     */
+    @Transactional
+    public void cancelMatch(Long matchId) {
+        if (matchId == null) {
+            return;
+        }
+        battleResultRepository.findById(matchId).ifPresent(record -> {
+            if (record.getFinishedAt() == null) {
+                battleResultRepository.delete(record);
+            }
+        });
+    }
+
+    /**
      * 対戦終了時に結果を保存する（同一 matchId なら更新 = 1対戦1レコード）
      * 両プレイヤーが POST するため、数値は max でマージし winnerId はサーバー側で決定する
      */
