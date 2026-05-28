@@ -1,6 +1,7 @@
 package com.example.typing.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -10,6 +11,7 @@ import jakarta.validation.constraints.Size;
  */
 public record PasswordResetConfirmRequest(
         @NotBlank
-        @Size(min = 8, max = 127, message = "パスワードは8文字以上、127文字以内で入力してください")
+        @Pattern(regexp = "^[^\\s　]+$", message = "{validation.password.no-space}")
+        @Size(min = 8, max = 127, message = "{validation.password.reset.size}")
         String password) {
 }
