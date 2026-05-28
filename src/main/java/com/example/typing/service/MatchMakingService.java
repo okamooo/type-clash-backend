@@ -2,23 +2,25 @@ package com.example.typing.service;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-
-import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class MatchMakingService {
 
+    private static final Logger log = LoggerFactory.getLogger(MatchMakingService.class);
+
     private final Queue<Long> waitingPlayers = new ConcurrentLinkedQueue<>();
     // 現在対戦中のペアを保持 (userId -> opponentId)
     private final Map<Long, Long> activeMatches = new ConcurrentHashMap<>();
-    
+
     private final SimpMessagingTemplate messagingTemplate;
-    private final AtomicLong matchIdCounter = new AtomicLong(1); // 1から始まる連番のID
 
     public MatchMakingService(SimpMessagingTemplate messagingTemplate) {
         this.messagingTemplate = messagingTemplate;
@@ -27,43 +29,51 @@ public class MatchMakingService {
     /**
      * ユーザーをマッチングキューに追加する
      * 2人揃ったら対戦IDを生成し、それぞれのユーザーに通知する
-     * 
+     *
      * @param userId マッチングを希望するユーザーのID
      */
     public synchronized void joinQueue(long userId) {
-        System.out.println("DEBUG: [Service] User " + userId + " attempting to join queue.");
+        log.debug("User {} attempting to join queue.", userId);
         if (waitingPlayers.contains(userId)) {
+            return;
+        }
+        if (activeMatches.containsKey(userId)) {
+            log.warn("User {} is already in a match. Ignoring joinQueue request.", userId);
             return;
         }
 
         waitingPlayers.add(userId);
 
-        // 2人以上揃っている間、マッチングを行い続ける
         while (waitingPlayers.size() >= 2) {
             Long player1 = waitingPlayers.poll();
             Long player2 = waitingPlayers.poll();
 
             if (player1 != null && player2 != null) {
-                System.out.println("DEBUG: [Service] Match found! " + player1 + " vs " + player2);
-                
-                // 対戦ペアを記録
-                activeMatches.put(player1, player2);
-                activeMatches.put(player2, player1);
-
-                // 対戦用の一意なID(Long)を生成
-                Long matchId = matchIdCounter.getAndIncrement();
-
-                // 各プレイヤーに通知を送る
-                notifyPlayer(player1, matchId, player2);
-                notifyPlayer(player2, matchId, player1);
+                createMatch(player1, player2);
+            } else if (player1 != null) {
+                waitingPlayers.add(player1);
+                break;
             }
         }
     }
 
-    /**
-     * 特定のユーザーに対戦開始の通知を送る
-     */
-    private void notifyPlayer(Long userId, Long matchId, Long opponentId) {
+    private void createMatch(Long player1, Long player2) {
+        log.debug("Match found! {} vs {}", player1, player2);
+        String matchId = UUID.randomUUID().toString();
+
+        try {
+            notifyPlayer(player1, matchId, player2);
+            notifyPlayer(player2, matchId, player1);
+            activeMatches.put(player1, player2);
+            activeMatches.put(player2, player1);
+        } catch (Exception e) {
+            log.error("Failed to notify players. Requeueing both.", e);
+            joinQueue(player1);
+            joinQueue(player2);
+        }
+    }
+
+    private void notifyPlayer(Long userId, String matchId, Long opponentId) {
         messagingTemplate.convertAndSend(
                 "/topic/match/notification/" + userId,
                 (Object) Map.of(
@@ -73,28 +83,28 @@ public class MatchMakingService {
     }
 
     /**
-     * ユーザーを待機列から削除する（キャンセル時など）
+     * 待機列からの離脱のみ（activeMatches は触らない）
      */
-    public void leaveQueue(long userId) {
-        System.out.println("DEBUG: [Service] User " + userId + " leave queue request.");
-        
-        // 1. 待機列から削除
+    public synchronized void leaveQueue(long userId) {
+        log.debug("User {} leave queue request.", userId);
         waitingPlayers.remove(userId);
+    }
 
-        // 2. 対戦中の相手がいる場合は通知を送る
+    /**
+     * 成立済み対戦からの離脱
+     */
+    public synchronized void leaveMatch(long userId) {
+        log.debug("User {} leave match request.", userId);
         Long opponentId = activeMatches.remove(userId);
         if (opponentId != null) {
-            activeMatches.remove(opponentId); // 相手側のデータも削除
-            
-            System.out.println("DEBUG: [Service] Notifying opponent " + opponentId + " about cancellation.");
-            
-            // 相手にキャンセルを通知
-            messagingTemplate.convertAndSend(
-                "/topic/match/notification/" + opponentId,
-                (Object) Map.of("status", "CANCELLED")
-            );
+            activeMatches.remove(opponentId);
 
-            // 相手を再び待機列に戻してあげる
+            log.debug("Notifying opponent {} about opponent left.", opponentId);
+
+            messagingTemplate.convertAndSend(
+                    "/topic/match/notification/" + opponentId,
+                    (Object) Map.of("status", "OPPONENT_LEFT"));
+
             joinQueue(opponentId);
         }
     }
