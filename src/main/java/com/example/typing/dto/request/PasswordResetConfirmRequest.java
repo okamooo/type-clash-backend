@@ -11,7 +11,7 @@ import jakarta.validation.constraints.Size;
  */
 public record PasswordResetConfirmRequest(
         @NotBlank
-        @Pattern(regexp = "^[^\\s　]+$", message = "{validation.password.no-space}")
-        @Size(min = 8, max = 127, message = "{validation.password.reset.size}")
+        @Pattern(regexp = "^[^\\s　]*$", message = "{validation.password.no-space}")
+        @Size(min = 8, max = 127, message = "{validation.password.size}")
         String password) {
 }

@@ -11,11 +11,11 @@ public class LoginRequest {
 
     @NotBlank(message = "{validation.email.required}")
     @Email(message = "{validation.email.format}")
-    @Pattern(regexp = "^[^\\s　]+$", message = "{validation.email.no-space}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.email.no-space}")
     private String email; // メールアドレス
 
     @Size(min = 8, max = 127, message = "{validation.password.size}")
     @NotBlank(message = "{validation.password.required}")
-    @Pattern(regexp = "^[^\\s　]+$", message = "{validation.password.no-space}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.password.no-space}")
     private String password; // パスワード
 }
