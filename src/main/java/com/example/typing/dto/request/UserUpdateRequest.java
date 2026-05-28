@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class UserUpdateRequest {
 
-    @Size(max = 50, message = "{validation.user.name.size}")
+    @Size(min = 1, max = 50, message = "{validation.user.name.size}")
     @Pattern(regexp = "^[^\\s　]*$", message = "{validation.user.name.no-space}")
     private String name;             // ユーザー名
 
