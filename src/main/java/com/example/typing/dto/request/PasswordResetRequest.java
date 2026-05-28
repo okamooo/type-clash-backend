@@ -2,6 +2,7 @@ package com.example.typing.dto.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 /**
  * パスワード再設定申請リクエスト DTO。
@@ -11,5 +12,6 @@ import jakarta.validation.constraints.NotBlank;
 public record PasswordResetRequest(
         @NotBlank
         @Email
+        @Pattern(regexp = "^[^\\s　]+$", message = "{validation.email.no-space}")
         String email) {
 }
