@@ -1,6 +1,7 @@
 package com.example.typing.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
@@ -8,16 +9,20 @@ import lombok.Data;
 @Data
 public class UserUpdateRequest {
 
-    @Size(max = 50, message = "ユーザー名は50文字以内で入力してください")
+    @Size(min = 1, max = 50, message = "{validation.user.name.size}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.user.name.no-space}")
     private String name;             // ユーザー名
 
-    @Email(message = "メールアドレスの形式が正しくありません")
+    @Email(message = "{validation.email.format}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.email.no-space}")
     private String email;            // メールアドレス
 
-    @Size(max = 127, message = "現在のパスワードは127文字以内で入力してください")
+    @Size(max = 127, message = "{validation.current-password.size}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.current-password.no-space}")
     private String currentPassword;  // 現在のパスワード（パスワード変更時に必須）
 
-    @Size(min = 8, max = 127, message = "パスワードは8文字以上127文字以内で入力してください")
+    @Size(min = 8, max = 127, message = "{validation.password.size}")
+    @Pattern(regexp = "^[^\\s　]*$", message = "{validation.password.no-space}")
     private String password;         // 新しいパスワード
 
     private String iconImage;        // アイコン画像URL
