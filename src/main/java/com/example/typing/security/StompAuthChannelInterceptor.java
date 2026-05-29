@@ -3,6 +3,7 @@ package com.example.typing.security;
 import java.security.Principal;
 import java.util.Map;
 
+import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.MessageDeliveryException;
@@ -12,10 +13,19 @@ import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+import com.example.typing.service.BattleModeService;
+
 @Component
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private static final String MATCH_NOTIFICATION_TOPIC_PREFIX = "/topic/match/notification/";
+    private static final String BATTLE_TOPIC_PREFIX = "/topic/battle/";
+
+    private final BattleModeService battleModeService;
+
+    public StompAuthChannelInterceptor(@Lazy BattleModeService battleModeService) {
+        this.battleModeService = battleModeService;
+    }
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -43,10 +53,21 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
 
     private void handleSubscribe(StompHeaderAccessor accessor) {
         String destination = accessor.getDestination();
-        if (destination == null || !destination.startsWith(MATCH_NOTIFICATION_TOPIC_PREFIX)) {
+        if (destination == null) {
             return;
         }
 
+        if (destination.startsWith(MATCH_NOTIFICATION_TOPIC_PREFIX)) {
+            handleMatchNotificationSubscribe(accessor, destination);
+            return;
+        }
+
+        if (destination.startsWith(BATTLE_TOPIC_PREFIX)) {
+            handleBattleTopicSubscribe(accessor, destination);
+        }
+    }
+
+    private void handleMatchNotificationSubscribe(StompHeaderAccessor accessor, String destination) {
         Principal user = accessor.getUser();
         if (user == null) {
             throw new MessageDeliveryException("Unauthorized: not authenticated");
@@ -60,6 +81,35 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         String topicUserId = destination.substring(destination.lastIndexOf('/') + 1);
         if (!topicUserId.equals(String.valueOf(userId))) {
             throw new MessageDeliveryException("Unauthorized subscription");
+        }
+    }
+
+    private void handleBattleTopicSubscribe(StompHeaderAccessor accessor, String destination) {
+        Principal user = accessor.getUser();
+        if (user == null) {
+            throw new MessageDeliveryException("Unauthorized: not authenticated");
+        }
+
+        Long userId = WebSocketAuthHelper.getUserIdFromPrincipal(user);
+        if (userId == null) {
+            throw new MessageDeliveryException("Unauthorized: invalid principal");
+        }
+
+        Long matchId = parseMatchIdFromDestination(destination, BATTLE_TOPIC_PREFIX);
+        if (matchId == null || !battleModeService.isParticipant(matchId, userId)) {
+            throw new MessageDeliveryException("Unauthorized subscription");
+        }
+    }
+
+    private Long parseMatchIdFromDestination(String destination, String prefix) {
+        String suffix = destination.substring(prefix.length());
+        if (suffix.isEmpty()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(suffix);
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
