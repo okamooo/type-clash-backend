@@ -45,6 +45,12 @@ public class BattleResult {
     @Column(name = "player2_miss_count")
     private Integer player2MissCount;
 
+    @Column(name = "player1_hp")
+    private Integer player1Hp;
+
+    @Column(name = "player2_hp")
+    private Integer player2Hp;
+
     @Column(name = "finished_at")
     private LocalDateTime finishedAt;
 }

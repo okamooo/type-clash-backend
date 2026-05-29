@@ -13,5 +13,7 @@ CREATE TABLE battle_results (
     player1_miss_count INT,
     player2_typed_chars INT,
     player2_miss_count INT,
+    player1_hp INT,
+    player2_hp INT,
     finished_at TIMESTAMP
 );
