@@ -16,7 +16,12 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://13.230.137.15:3000",
+        "http://13.230.137.15"
+})
 public class BattleModeController {
 
     private final BattleModeService battleModeService;

@@ -74,7 +74,8 @@ public class SecurityConfig {
         config.setAllowedOrigins(List.of(
                 "http://localhost:3000",
                 "http://127.0.0.1:3000",
-                "http://52.198.181.53")); // アクセスを許可するURL
+                "http://13.230.137.15:3000",
+                "http://13.230.137.15")); // アクセスを許可するURL（:3000 直アクセス / Nginx 80）
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // 許可するHTTPメソッド
         config.setAllowedHeaders(List.of("*")); // 許可するHTTPヘッダー
         config.setAllowCredentials(true); // クッキー（Cookie）や認証情報
