@@ -45,6 +45,10 @@ erDiagram
         INTEGER player2_score
         INTEGER player1_accuracy_rate
         INTEGER player2_accuracy_rate
+        INTEGER player1_typed_chars
+        INTEGER player1_miss_count
+        INTEGER player2_typed_chars
+        INTEGER player2_miss_count
         TIMESTAMP finished_at
     }
 
