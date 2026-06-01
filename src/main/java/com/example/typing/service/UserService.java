@@ -12,11 +12,13 @@ import com.example.typing.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,6 +29,8 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 @RequiredArgsConstructor
 public class UserService {
+
+    private static final Set<String> ALLOWED_IMAGE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "webp");
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -149,6 +153,7 @@ public class UserService {
         try {
             Files.createDirectories(userUploadDir);
             Files.copy(file.getInputStream(), iconPath, StandardCopyOption.REPLACE_EXISTING);
+            deleteOldIconFiles(userUploadDir, iconPath);
         } catch (IOException e) {
             throw new IllegalStateException("画像ファイルの保存に失敗しました", e);
         }
@@ -166,12 +171,21 @@ public class UserService {
 
         String extension = filename.substring(filename.lastIndexOf(".") + 1).toLowerCase(Locale.ROOT);
 
-        if (!extension.equals("png") && !extension.equals("jpg")
-                && !extension.equals("jpeg") && !extension.equals("webp")) {
+        if (!ALLOWED_IMAGE_EXTENSIONS.contains(extension)) {
             throw new InvalidImageFileException("アップロードできる画像形式は png, jpg, jpeg, webp のみです");
         }
 
         return extension;
+    }
+
+    private void deleteOldIconFiles(Path userUploadDir, Path currentIconPath) throws IOException {
+        try (DirectoryStream<Path> iconFiles = Files.newDirectoryStream(userUploadDir, "icon.*")) {
+            for (Path iconFile : iconFiles) {
+                if (!iconFile.equals(currentIconPath)) {
+                    Files.deleteIfExists(iconFile);
+                }
+            }
+        }
     }
 
     /**
