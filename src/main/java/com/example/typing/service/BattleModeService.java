@@ -143,7 +143,7 @@ public class BattleModeService {
                 record.setPlayer1Score(maxInt(record.getPlayer1Score(), message.getScore()));
             }
             if (message.getAccuracyRate() != null) {
-                record.setPlayer1AccuracyRate(maxInt(record.getPlayer1AccuracyRate(), message.getAccuracyRate()));
+                record.setPlayer1AccuracyRate(message.getAccuracyRate());
             }
             if (message.getTypedChars() != null) {
                 record.setPlayer1TypedChars(maxInt(record.getPlayer1TypedChars(), message.getTypedChars()));
@@ -161,7 +161,7 @@ public class BattleModeService {
             record.setPlayer2Score(maxInt(record.getPlayer2Score(), message.getScore()));
         }
         if (message.getAccuracyRate() != null) {
-            record.setPlayer2AccuracyRate(maxInt(record.getPlayer2AccuracyRate(), message.getAccuracyRate()));
+            record.setPlayer2AccuracyRate(message.getAccuracyRate());
         }
         if (message.getTypedChars() != null) {
             record.setPlayer2TypedChars(maxInt(record.getPlayer2TypedChars(), message.getTypedChars()));
@@ -187,14 +187,18 @@ public class BattleModeService {
     private void mergeOwnStats(BattleResult existing, BattleResult incoming, Long authenticatedUserId) {
         if (authenticatedUserId.equals(existing.getPlayer1Id())) {
             existing.setPlayer1Score(maxInt(existing.getPlayer1Score(), incoming.getPlayer1Score()));
-            existing.setPlayer1AccuracyRate(maxInt(existing.getPlayer1AccuracyRate(), incoming.getPlayer1AccuracyRate()));
+            if (incoming.getPlayer1AccuracyRate() != null) {
+                existing.setPlayer1AccuracyRate(incoming.getPlayer1AccuracyRate());
+            }
             existing.setPlayer1TypedChars(maxInt(existing.getPlayer1TypedChars(), incoming.getPlayer1TypedChars()));
             existing.setPlayer1MissCount(maxInt(existing.getPlayer1MissCount(), incoming.getPlayer1MissCount()));
             return;
         }
         if (authenticatedUserId.equals(existing.getPlayer2Id())) {
             existing.setPlayer2Score(maxInt(existing.getPlayer2Score(), incoming.getPlayer2Score()));
-            existing.setPlayer2AccuracyRate(maxInt(existing.getPlayer2AccuracyRate(), incoming.getPlayer2AccuracyRate()));
+            if (incoming.getPlayer2AccuracyRate() != null) {
+                existing.setPlayer2AccuracyRate(incoming.getPlayer2AccuracyRate());
+            }
             existing.setPlayer2TypedChars(maxInt(existing.getPlayer2TypedChars(), incoming.getPlayer2TypedChars()));
             existing.setPlayer2MissCount(maxInt(existing.getPlayer2MissCount(), incoming.getPlayer2MissCount()));
         }
