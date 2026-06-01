@@ -22,6 +22,14 @@ public class UserExceptionHandler {
     }
 
     /**
+     * 400 画像ファイルが正しくない
+     */
+    @ExceptionHandler(InvalidImageFileException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidImageFileException(InvalidImageFileException ex) {
+        return buildResponse(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    /**
      * 401 認証失敗
      */
     @ExceptionHandler(AuthenticationFailedException.class)
