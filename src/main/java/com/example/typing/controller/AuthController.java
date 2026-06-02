@@ -16,6 +16,7 @@ import com.example.typing.dto.response.UserResponse;
 import com.example.typing.entity.User;
 import com.example.typing.security.JwtUtils;
 import com.example.typing.service.AuthService;
+import com.example.typing.service.LoginSessionService;
 import com.example.typing.service.TwoFactorAuthService;
 import com.example.typing.service.UserService;
 
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class AuthController {
         private final JwtUtils jwtUtils;
         private final AuthService authService;
+        private final LoginSessionService loginSessionService;
         private final TwoFactorAuthService twoFactorAuthService;
         private final UserService userService;
 
@@ -100,7 +102,12 @@ public class AuthController {
          * @return
          */
         @PostMapping("/auth/logout")
-        public ResponseEntity<?> logout() {
+        public ResponseEntity<?> logout(@CookieValue(name = "accessToken", required = false) String accessToken) {
+                if (accessToken != null && jwtUtils.validateToken(accessToken)) {
+                        Long userId = jwtUtils.getUserIdFromToken(accessToken);
+                        String loginSessionId = jwtUtils.getLoginSessionIdFromToken(accessToken);
+                        loginSessionService.deleteSessionIfMatches(userId, loginSessionId);
+                }
                 ResponseCookie cookie = ResponseCookie.from("accessToken", "")
                                 .httpOnly(true)
                                 // .secure(true) //HTTPS通信のみで送信
@@ -126,7 +133,8 @@ public class AuthController {
         public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
 
                 User user = authService.authenticate(request);
-                String token = jwtUtils.generateToken(user.getId());
+                String loginSessionId = loginSessionService.createSession(user.getId());
+                String token = jwtUtils.generateToken(user.getId(), loginSessionId);
 
                 ResponseCookie cookie = ResponseCookie.from("accessToken", token)
                                 .httpOnly(true)

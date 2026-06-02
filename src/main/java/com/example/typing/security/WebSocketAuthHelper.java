@@ -11,6 +11,7 @@ import jakarta.servlet.http.Cookie;
 public final class WebSocketAuthHelper {
 
     public static final String WS_USER_ID_ATTR = "wsUserId";
+    public static final String WS_LOGIN_SESSION_ID_ATTR = "wsLoginSessionId";
 
     private WebSocketAuthHelper() {
     }
