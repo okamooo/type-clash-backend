@@ -187,18 +187,16 @@ public class BattleModeService {
     private void mergeOwnStats(BattleResult existing, BattleResult incoming, Long authenticatedUserId) {
         if (authenticatedUserId.equals(existing.getPlayer1Id())) {
             existing.setPlayer1Score(maxInt(existing.getPlayer1Score(), incoming.getPlayer1Score()));
-            if (incoming.getPlayer1AccuracyRate() != null) {
-                existing.setPlayer1AccuracyRate(incoming.getPlayer1AccuracyRate());
-            }
+            existing.setPlayer1AccuracyRate(
+                    maxInt(existing.getPlayer1AccuracyRate(), incoming.getPlayer1AccuracyRate()));
             existing.setPlayer1TypedChars(maxInt(existing.getPlayer1TypedChars(), incoming.getPlayer1TypedChars()));
             existing.setPlayer1MissCount(maxInt(existing.getPlayer1MissCount(), incoming.getPlayer1MissCount()));
             return;
         }
         if (authenticatedUserId.equals(existing.getPlayer2Id())) {
             existing.setPlayer2Score(maxInt(existing.getPlayer2Score(), incoming.getPlayer2Score()));
-            if (incoming.getPlayer2AccuracyRate() != null) {
-                existing.setPlayer2AccuracyRate(incoming.getPlayer2AccuracyRate());
-            }
+            existing.setPlayer2AccuracyRate(
+                    maxInt(existing.getPlayer2AccuracyRate(), incoming.getPlayer2AccuracyRate()));
             existing.setPlayer2TypedChars(maxInt(existing.getPlayer2TypedChars(), incoming.getPlayer2TypedChars()));
             existing.setPlayer2MissCount(maxInt(existing.getPlayer2MissCount(), incoming.getPlayer2MissCount()));
         }
