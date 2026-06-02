@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api")
@@ -34,12 +35,28 @@ public class UserController {
      *
      * @param userId  パスパラメータ（ユーザーID）
      * @param request リクエストボディ（更新情報）
-     * @return 200 OK + UserResponse / 400 Bad Request / 404 Not Found / 409 Conflict
+     * @return 200 OK + UserResponse / 400 Bad Request / 404 Not Found / 409
+     *         Conflict
      */
     @PatchMapping("/users/{userId}")
     public ResponseEntity<UserResponse> updateUser(@PathVariable Long userId,
             @Valid @RequestBody UserUpdateRequest request) {
         UserResponse response = userService.updateUser(userId, request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 【ユーザーアイコン画像アップロード】
+     * 指定したユーザーのアイコン画像をアップロードする
+     *
+     * @param userId パスパラメータ（ユーザーID）
+     * @param file   multipart/form-data の画像ファイル
+     * @return 200 OK + UserResponse / 400 Bad Request / 404 Not Found
+     */
+    @PostMapping("/users/{userId}/icon")
+    public ResponseEntity<UserResponse> uploadUserIcon(@PathVariable Long userId,
+            @RequestParam("file") MultipartFile file) {
+        UserResponse response = userService.uploadUserIcon(userId, file);
         return ResponseEntity.ok(response);
     }
 
