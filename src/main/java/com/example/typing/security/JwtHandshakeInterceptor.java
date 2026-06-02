@@ -12,6 +12,8 @@ import org.springframework.web.socket.server.HandshakeInterceptor;
 
 import com.example.typing.service.LoginSessionService;
 
+import io.jsonwebtoken.Claims;
+
 @Component
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
@@ -36,13 +38,14 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         String token = WebSocketAuthHelper.parseAccessToken(
                 servletRequest.getServletRequest().getCookies());
-        if (token == null || !jwtUtils.validateToken(token)) {
+        Claims claims = token == null ? null : jwtUtils.validateAndGetClaims(token);
+        if (claims == null) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
             return false;
         }
 
-        Long userId = jwtUtils.getUserIdFromToken(token);
-        String loginSessionId = jwtUtils.getLoginSessionIdFromToken(token);
+        Long userId = Long.parseLong(claims.getSubject());
+        String loginSessionId = claims.get("loginSessionId", String.class);
         if (!loginSessionService.isValid(userId, loginSessionId)) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
             return false;

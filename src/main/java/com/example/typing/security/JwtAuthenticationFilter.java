@@ -11,6 +11,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.example.typing.service.LoginSessionService;
 
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -42,31 +43,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         String token = parseJwt(request);
 
-        if (token != null && jwtUtils.validateToken(token)) {
-            Long userId = jwtUtils.getUserIdFromToken(token);
-            String loginSessionId = jwtUtils.getLoginSessionIdFromToken(token);
-            if (!loginSessionService.isValid(userId, loginSessionId)) {
-                if (isAuthEndpoint(request)) {
-                    filterChain.doFilter(request, response);
-                    return;
+        if (token != null) {
+            Claims claims = jwtUtils.validateAndGetClaims(token);
+            if (claims != null) {
+                Long userId = Long.parseLong(claims.getSubject());
+                String loginSessionId = claims.get("loginSessionId", String.class);
+                if (loginSessionService.isValid(userId, loginSessionId)) {
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,
+                            null, Collections.emptyList());
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                } else {
+                    SecurityContextHolder.clearContext();
                 }
+            } else {
                 SecurityContextHolder.clearContext();
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
             }
-
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,
-                    null, Collections.emptyList());
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 
         filterChain.doFilter(request, response);
 
-    }
-
-    private boolean isAuthEndpoint(HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path != null && path.startsWith("/api/auth/");
     }
 }

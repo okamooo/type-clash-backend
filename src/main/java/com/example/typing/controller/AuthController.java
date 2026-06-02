@@ -20,6 +20,7 @@ import com.example.typing.service.LoginSessionService;
 import com.example.typing.service.TwoFactorAuthService;
 import com.example.typing.service.UserService;
 
+import io.jsonwebtoken.Claims;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -103,9 +104,10 @@ public class AuthController {
          */
         @PostMapping("/auth/logout")
         public ResponseEntity<?> logout(@CookieValue(name = "accessToken", required = false) String accessToken) {
-                if (accessToken != null && jwtUtils.validateToken(accessToken)) {
-                        Long userId = jwtUtils.getUserIdFromToken(accessToken);
-                        String loginSessionId = jwtUtils.getLoginSessionIdFromToken(accessToken);
+                Claims claims = accessToken == null ? null : jwtUtils.validateAndGetClaims(accessToken);
+                if (claims != null) {
+                        Long userId = Long.parseLong(claims.getSubject());
+                        String loginSessionId = claims.get("loginSessionId", String.class);
                         loginSessionService.deleteSessionIfMatches(userId, loginSessionId);
                 }
                 ResponseCookie cookie = ResponseCookie.from("accessToken", "")

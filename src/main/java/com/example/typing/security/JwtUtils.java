@@ -59,13 +59,18 @@ public class JwtUtils {
      */
 
     public boolean validateToken(String token) {
+        return validateAndGetClaims(token) != null;
+    }
+
+    public Claims validateAndGetClaims(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(getKey()).build()
-                    .parseClaimsJws(token).getBody();
-            return claims.get("scope") == null;
+            Claims claims = getClaims(token);
+            if (claims.get("scope") != null) {
+                return null;
+            }
+            return claims;
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return null;
         }
     }
 
