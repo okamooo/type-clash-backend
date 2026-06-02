@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.typing.dto.request.PasswordResetConfirmRequest;
+import com.example.typing.dto.request.PasswordResetConfirmRequestV2;
 import com.example.typing.dto.request.PasswordResetRequest;
 import com.example.typing.dto.request.OtpVerifyRequest;
 import com.example.typing.service.PasswordResetService;
@@ -89,18 +89,35 @@ public class PasswordResetController {
      * @param request 新しいパスワード情報
      * @return 200 OK
      */
+    //　2段階認証を今回使用しないためコメントアウト対応
+    // @PostMapping("/new")
+    // public ResponseEntity<Void> resetPassword(
+    //         @CookieValue(name = "passwordResetToken", required = false) String passwordResetToken,
+    //         @Valid @RequestBody PasswordResetConfirmRequest request) {
+
+    //     passwordResetService.resetPassword(passwordResetToken, request);
+
+    //     ResponseCookie clearCookie = buildPasswordResetCookie("", 0);
+
+    //     return ResponseEntity.ok()
+    //             .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
+    //             .build();
+    // }
+
+    /**
+     * 【パスワード再設定】
+     * パスワードを更新する。
+     *
+     * @param request 新しいパスワード情報
+     * @return 200 OK
+     */
     @PostMapping("/new")
     public ResponseEntity<Void> resetPassword(
-            @CookieValue(name = "passwordResetToken", required = false) String passwordResetToken,
-            @Valid @RequestBody PasswordResetConfirmRequest request) {
+            @Valid @RequestBody PasswordResetConfirmRequestV2 request) {
 
-        passwordResetService.resetPassword(passwordResetToken, request);
+        passwordResetService.resetPassword(request);
 
-        ResponseCookie clearCookie = buildPasswordResetCookie("", 0);
-
-        return ResponseEntity.ok()
-                .header(HttpHeaders.SET_COOKIE, clearCookie.toString())
-                .build();
+        return ResponseEntity.ok().build();
     }
 
     /**

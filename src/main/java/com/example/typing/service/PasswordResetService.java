@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.typing.dto.request.OtpVerifyRequest;
-import com.example.typing.dto.request.PasswordResetConfirmRequest;
+import com.example.typing.dto.request.PasswordResetConfirmRequestV2;
 import com.example.typing.dto.request.PasswordResetRequest;
 import com.example.typing.entity.OtpToken;
 import com.example.typing.entity.User;
@@ -131,15 +131,26 @@ public class PasswordResetService {
      * @param passwordResetToken パスワード再設定用JWT
      * @param request            新しいパスワード情報
      */
-    public void resetPassword(String passwordResetToken, PasswordResetConfirmRequest request) {
-        String email = getEmailFromPasswordResetToken(passwordResetToken);
+    // ２段階認証を使用しないため、コメントアウト
+    // public void resetPassword(String passwordResetToken, PasswordResetConfirmRequest request) {
+    //     String email = getEmailFromPasswordResetToken(passwordResetToken);
 
-        User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+    //     User user = userRepository.findByEmailAndDeletedAtIsNull(email)
+    //             .orElseThrow(() -> new OtpAuthenticationException("有効なユーザーが見つかりません"));
+
+    //     user.setPassword(passwordEncoder.encode(request.password()));
+
+    //     otpTokenRepository.deleteByEmail(email);
+    // }
+
+    public void resetPassword(PasswordResetConfirmRequestV2 request) {
+
+        User user = userRepository.findByEmailAndDeletedAtIsNull(request.getEmail())
                 .orElseThrow(() -> new OtpAuthenticationException("有効なユーザーが見つかりません"));
 
-        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        otpTokenRepository.deleteByEmail(email);
+        otpTokenRepository.deleteByEmail(request.getEmail());
     }
 
     /**
