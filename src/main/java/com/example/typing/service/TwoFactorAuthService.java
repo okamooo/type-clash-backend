@@ -18,7 +18,6 @@ import com.example.typing.repository.OtpTokenRepository;
 import com.example.typing.repository.UserRepository;
 import com.example.typing.security.JwtUtils;
 
-import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +34,6 @@ public class TwoFactorAuthService {
     private final OtpTokenRepository otpTokenRepository;
     private final SendMailService sendMailService;
     private final PasswordEncoder passwordEncoder;
-    private final UserService userService;
     private final JwtUtils jwtUtils;
 
     /**
@@ -135,24 +133,26 @@ public class TwoFactorAuthService {
         return jwtUtils.generateRegisterToken(token.getEmail());
     }
 
-    public void registUser(String registerToken) {
-        // JWTの署名・有効期限・scope=REGISTER を検証してメールアドレスを取得
-        String email;
-        try {
-            email = jwtUtils.getEmailFromRegisterToken(registerToken);
-        } catch (JwtException | IllegalArgumentException e) {
-            throw new OtpAuthenticationException("無効なトークンです。");
-        }
 
-        // OtpTokenからユーザー情報を取得
-        OtpToken token = otpTokenRepository.findByEmail(email)
-                .orElseThrow(() -> new OtpAuthenticationException("無効なトークンです。"));
+    //２段階認証を使用しないため、コメントアウト
+    // public void registUser(String registerToken) {
+    //     // JWTの署名・有効期限・scope=REGISTER を検証してメールアドレスを取得
+    //     String email;
+    //     try {
+    //         email = jwtUtils.getEmailFromRegisterToken(registerToken);
+    //     } catch (JwtException | IllegalArgumentException e) {
+    //         throw new OtpAuthenticationException("無効なトークンです。");
+    //     }
 
-        // userテーブルに本登録
-        userService.registerUser(token);
+    //     // OtpTokenからユーザー情報を取得
+    //     OtpToken token = otpTokenRepository.findByEmail(email)
+    //             .orElseThrow(() -> new OtpAuthenticationException("無効なトークンです。"));
 
-        // ユーザー一時情報を削除
-        otpTokenRepository.delete(token);
-    }
+    //     // userテーブルに本登録
+    //     userService.registerUser(token);
+
+    //     // ユーザー一時情報を削除
+    //     otpTokenRepository.delete(token);
+    // }
 
 }

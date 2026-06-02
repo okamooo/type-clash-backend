@@ -29,6 +29,7 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+
     /**
      * 【ユーザー情報更新】
      * 指定したユーザーのプロフィール情報を更新する
