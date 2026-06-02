@@ -1,6 +1,5 @@
 package com.example.typing.controller;
 
-import com.example.typing.dto.request.UserRegisterRequest;
 import com.example.typing.dto.request.UserUpdateRequest;
 import com.example.typing.dto.response.UserResponse;
 import com.example.typing.service.UserService;
@@ -30,18 +29,6 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
-    /**
-     * 【ユーザー登録】
-     * 新規ユーザーを登録する
-     *
-     * @param request リクエストボディ（ユーザー登録情報）
-     * @return 201 Created + UserResponse / 400 Bad Request / 409 Conflict
-     */
-    @PostMapping("/users/register")
-    public ResponseEntity<UserResponse> registerUser(@Valid @RequestBody UserRegisterRequest request) {
-        UserResponse response = userService.registerUser(request);
-        return ResponseEntity.status(201).body(response);
-    }
 
     /**
      * 【ユーザー情報更新】
