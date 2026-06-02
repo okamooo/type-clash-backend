@@ -1,0 +1,8 @@
+{
+  "name": "type-clash-sql-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "wanakana": "^5.3.1"
+  }
+}

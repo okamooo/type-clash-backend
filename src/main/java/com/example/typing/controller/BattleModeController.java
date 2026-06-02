@@ -4,6 +4,8 @@ import com.example.typing.dto.response.BattlePlayerResultResponse;
 import com.example.typing.dto.response.BattleResultResponse;
 import com.example.typing.entity.BattleResult;
 import com.example.typing.entity.MagicWords;
+import com.example.typing.entity.User;
+import com.example.typing.repository.UserRepository;
 import com.example.typing.security.WebSocketAuthHelper;
 import com.example.typing.service.BattleModeService;
 import org.springframework.http.ResponseEntity;
@@ -16,18 +18,14 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://13.230.137.15:3000",
-        "http://13.230.137.15"
-})
 public class BattleModeController {
 
     private final BattleModeService battleModeService;
+    private final UserRepository userRepository;
 
-    public BattleModeController(BattleModeService battleModeService) {
+    public BattleModeController(BattleModeService battleModeService, UserRepository userRepository) {
         this.battleModeService = battleModeService;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -103,25 +101,23 @@ public class BattleModeController {
 
         List<BattlePlayerResultResponse> players = new ArrayList<>();
 
-        players.add(BattlePlayerResultResponse.builder()
-                .id(result.getPlayer1Id())
-                .role("player1")
-                .score(result.getPlayer1Score())
-                .accuracyRate(result.getPlayer1AccuracyRate())
-                .typedChars(result.getPlayer1TypedChars())
-                .missCount(result.getPlayer1MissCount())
-                .isWinner(result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer1Id()))
-                .build());
+        players.add(buildPlayerResult(
+                result.getPlayer1Id(),
+                "player1",
+                result.getPlayer1Score(),
+                result.getPlayer1AccuracyRate(),
+                result.getPlayer1TypedChars(),
+                result.getPlayer1MissCount(),
+                result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer1Id())));
 
-        players.add(BattlePlayerResultResponse.builder()
-                .id(result.getPlayer2Id())
-                .role("player2")
-                .score(result.getPlayer2Score())
-                .accuracyRate(result.getPlayer2AccuracyRate())
-                .typedChars(result.getPlayer2TypedChars())
-                .missCount(result.getPlayer2MissCount())
-                .isWinner(result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer2Id()))
-                .build());
+        players.add(buildPlayerResult(
+                result.getPlayer2Id(),
+                "player2",
+                result.getPlayer2Score(),
+                result.getPlayer2AccuracyRate(),
+                result.getPlayer2TypedChars(),
+                result.getPlayer2MissCount(),
+                result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer2Id())));
 
         BattleResultResponse response = BattleResultResponse.builder()
                 .id(result.getMatchId())
@@ -131,5 +127,30 @@ public class BattleModeController {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    private BattlePlayerResultResponse buildPlayerResult(
+            Long userId,
+            String role,
+            Integer score,
+            Integer accuracyRate,
+            Integer typedChars,
+            Integer missCount,
+            boolean isWinner) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId).orElse(null);
+        String name = user != null ? user.getName() : "Unknown";
+        String iconImage = user != null ? user.getIconImage() : null;
+
+        return BattlePlayerResultResponse.builder()
+                .id(userId)
+                .name(name)
+                .iconImage(iconImage)
+                .role(role)
+                .score(score)
+                .accuracyRate(accuracyRate)
+                .typedChars(typedChars)
+                .missCount(missCount)
+                .isWinner(isWinner)
+                .build();
     }
 }
