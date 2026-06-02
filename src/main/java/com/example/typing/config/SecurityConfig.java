@@ -71,8 +71,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "*")); // アクセスを許可するURL（:3000 直アクセス / Nginx 80）
+        config.setAllowedOriginPatterns(List.of("*")); // アクセスを許可するURL（:3000 直アクセス / Nginx 80）
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")); // 許可するHTTPメソッド
         config.setAllowedHeaders(List.of("*")); // 許可するHTTPヘッダー
         config.setAllowCredentials(true); // クッキー（Cookie）や認証情報
