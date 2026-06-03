@@ -1,8 +1,8 @@
-name: Java CI/CD with Gradle and Deploy to EC2
+name: Java CI/CD with Maven and Deploy to EC2
 
 on:
   push:
-    branches: [ "feature/CICD" ] # mainブランチにpushされたら起動
+    branches: [ "main" ] # mainブランチにpushされたら起動
 
 jobs:
   build-and-deploy:
