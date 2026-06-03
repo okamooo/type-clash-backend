@@ -5,7 +5,7 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-// ユーザーを表すエンティティクラスだよ
+// ユーザーを表すエンティティクラス
 @Entity
 @Data
 @Table(name = "users")
