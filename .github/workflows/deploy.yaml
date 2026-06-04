@@ -1,0 +1,38 @@
+name: Java CI/CD with Maven and Deploy to EC2
+
+on:
+  push:
+    branches: [ "main" ] # mainブランチにpushされたら起動
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    # 1. コードのチェックアウト
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 2. Java環境のセットアップ
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+
+    # 3. mavenによるビルド（Jarファイルの生成）
+    - name: Build with Maven
+      run: |
+        mvn clean package
+
+    # 4. 生成されたJarファイルをEC2へ転送 (SCP)
+    - name: Copy Jar to EC2
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        source: "target/*.jar" # Mavenの場合は target/*.jar
+        target: "/var/www/type-clash-backend/target"
+        strip_components: 1 # target の階層を無視してJarだけを配置
