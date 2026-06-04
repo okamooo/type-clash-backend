@@ -1,16 +1,13 @@
 /**
  * words テーブル用: kana_reading → romaji_target を生成する。
  *
- * ルール:
- * - スペース除去して連結（句読点は kana 側にあれば toRomaji で反映）
- * - ヘボン（wanakana: shi, chuu 等）
- * - ひらがな「は」: 助詞も含めキーボード表記の ha（wanakana 準拠）
- * - ひらがな「わ」: wa
+ * ルール（日本向け・かな1文字ずつ固定）:
+ * - スペース除去して連結
+ * - ひらがな「は」→ 常に romaji "ha"（助詞・語頭どちらも。例: 今日は→kyouha…、はじめて→hajimete）
+ * - ひらがな「わ」→ 常に romaji "wa"（例: 終わる→owaru、わらえ→warae）
+ * - それ以外のかな塊 → wanakana（shi, chuu 等）
  */
 import { toRomaji } from "wanakana";
-
-/** 語中の「は」(ha)。助詞と分離しないと「はつ」→ hatsu になる */
-const HA_LEXICAL_PREFIXES = ["はじめ", "はなび", "はなし", "はんだん"];
 
 const WORDS = [
   {
@@ -149,11 +146,6 @@ const WORDS = [
   { display: "二人まとめて殺したる", kana: "ふたりまとめてころしたる" },
 ];
 
-function isHaAsLexical(kana, index) {
-  const rest = kana.slice(index);
-  return HA_LEXICAL_PREFIXES.some((prefix) => rest.startsWith(prefix));
-}
-
 /** wanakana の撥音区切り（'）や長音（-）はタイピング用に除去 */
 function normalizeRomaji(romaji) {
   return romaji.replace(/['-]/g, "");
@@ -163,7 +155,7 @@ function isKanaChar(char) {
   return /[\u3040-\u309F]/.test(char) || char === "ー";
 }
 
-/** 助詞の「は」だけ ha に切り出し、それ以外は toRomaji（拗音・はつ結合を防ぐ） */
+/** かな「は」→ ha、「わ」→ wa を DB 正として明示し、残りを toRomaji */
 export function kanaToRomajiTarget(kanaReading) {
   const compact = kanaReading.replace(/[\s　]+/g, "");
   const parts = [];
@@ -179,9 +171,15 @@ export function kanaToRomajiTarget(kanaReading) {
   for (let ki = 0; ki < compact.length; ki++) {
     const char = compact[ki];
 
-    if (char === "は" && !isHaAsLexical(compact, ki)) {
+    if (char === "は") {
       flushKana();
       parts.push({ kind: "ha" });
+      continue;
+    }
+
+    if (char === "わ") {
+      flushKana();
+      parts.push({ kind: "wa" });
       continue;
     }
 
@@ -196,6 +194,7 @@ export function kanaToRomajiTarget(kanaReading) {
   const joined = parts
     .map((part) => {
       if (part.kind === "ha") return "ha";
+      if (part.kind === "wa") return "wa";
       return toRomaji(part.value);
     })
     .join("");
