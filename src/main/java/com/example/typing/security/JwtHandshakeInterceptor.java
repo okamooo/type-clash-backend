@@ -10,13 +10,19 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.server.HandshakeInterceptor;
 
+import com.example.typing.service.LoginSessionService;
+
+import io.jsonwebtoken.Claims;
+
 @Component
 public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
     private final JwtUtils jwtUtils;
+    private final LoginSessionService loginSessionService;
 
-    public JwtHandshakeInterceptor(JwtUtils jwtUtils) {
+    public JwtHandshakeInterceptor(JwtUtils jwtUtils, LoginSessionService loginSessionService) {
         this.jwtUtils = jwtUtils;
+        this.loginSessionService = loginSessionService;
     }
 
     @Override
@@ -32,13 +38,21 @@ public class JwtHandshakeInterceptor implements HandshakeInterceptor {
 
         String token = WebSocketAuthHelper.parseAccessToken(
                 servletRequest.getServletRequest().getCookies());
-        if (token == null || !jwtUtils.validateToken(token)) {
+        Claims claims = token == null ? null : jwtUtils.validateAndGetClaims(token);
+        if (claims == null) {
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
             return false;
         }
 
-        Long userId = jwtUtils.getUserIdFromToken(token);
+        Long userId = Long.parseLong(claims.getSubject());
+        String loginSessionId = claims.get("loginSessionId", String.class);
+        if (!loginSessionService.isValid(userId, loginSessionId)) {
+            response.setStatusCode(HttpStatus.UNAUTHORIZED);
+            return false;
+        }
+
         attributes.put(WebSocketAuthHelper.WS_USER_ID_ATTR, userId);
+        attributes.put(WebSocketAuthHelper.WS_LOGIN_SESSION_ID_ATTR, loginSessionId);
         return true;
     }
 

@@ -14,6 +14,7 @@ import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
 import com.example.typing.service.BattleModeService;
+import com.example.typing.service.LoginSessionService;
 
 @Component
 public class StompAuthChannelInterceptor implements ChannelInterceptor {
@@ -22,9 +23,13 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
     private static final String BATTLE_TOPIC_PREFIX = "/topic/battle/";
 
     private final BattleModeService battleModeService;
+    private final LoginSessionService loginSessionService;
 
-    public StompAuthChannelInterceptor(@Lazy BattleModeService battleModeService) {
+    public StompAuthChannelInterceptor(
+            @Lazy BattleModeService battleModeService,
+            LoginSessionService loginSessionService) {
         this.battleModeService = battleModeService;
+        this.loginSessionService = loginSessionService;
     }
 
     @Override
@@ -37,7 +42,10 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         if (StompCommand.CONNECT.equals(accessor.getCommand())) {
             handleConnect(accessor);
         } else if (StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
+            validateCurrentLoginSession(accessor);
             handleSubscribe(accessor);
+        } else if (StompCommand.SEND.equals(accessor.getCommand())) {
+            validateCurrentLoginSession(accessor);
         }
 
         return message;
@@ -124,6 +132,26 @@ public class StompAuthChannelInterceptor implements ChannelInterceptor {
         }
         if (value instanceof Number number) {
             return number.longValue();
+        }
+        return null;
+    }
+
+    private void validateCurrentLoginSession(StompHeaderAccessor accessor) {
+        Long userId = WebSocketAuthHelper.getUserIdFromPrincipal(accessor.getUser());
+        String loginSessionId = getHandshakeLoginSessionId(accessor);
+        if (!loginSessionService.isValid(userId, loginSessionId)) {
+            throw new MessageDeliveryException("Unauthorized: inactive login session");
+        }
+    }
+
+    private String getHandshakeLoginSessionId(StompHeaderAccessor accessor) {
+        Map<String, Object> sessionAttributes = accessor.getSessionAttributes();
+        if (sessionAttributes == null) {
+            return null;
+        }
+        Object value = sessionAttributes.get(WebSocketAuthHelper.WS_LOGIN_SESSION_ID_ATTR);
+        if (value instanceof String loginSessionId) {
+            return loginSessionId;
         }
         return null;
     }

@@ -21,6 +21,7 @@ public class JwtUtils {
 
     private static final long EXPIRATION_TIME = 1000 * 60 * 60 * 24;
     private static final long OTP_TOKEN_EXPIRY = 1000 * 60 * 10;
+    private static final String LOGIN_SESSION_ID_CLAIM = "loginSessionId";
 
     /**
      * 【JWT署名キーの取得】
@@ -37,12 +38,13 @@ public class JwtUtils {
      * @param id
      * @return
      */
-    public String generateToken(Long id) {
+    public String generateToken(Long id, String loginSessionId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + EXPIRATION_TIME);
 
         return Jwts.builder()
                 .setSubject(String.valueOf(id))
+                .claim(LOGIN_SESSION_ID_CLAIM, loginSessionId)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
                 .signWith(getKey())
@@ -57,13 +59,18 @@ public class JwtUtils {
      */
 
     public boolean validateToken(String token) {
+        return validateAndGetClaims(token) != null;
+    }
+
+    public Claims validateAndGetClaims(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                    .setSigningKey(getKey()).build()
-                    .parseClaimsJws(token).getBody();
-            return claims.get("scope") == null;
+            Claims claims = getClaims(token);
+            if (claims.get("scope") != null) {
+                return null;
+            }
+            return claims;
         } catch (JwtException | IllegalArgumentException e) {
-            return false;
+            return null;
         }
     }
 
@@ -74,13 +81,12 @@ public class JwtUtils {
      * @return
      */
     public Long getUserIdFromToken(String token) {
-        String subject = Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody()
-                .getSubject();
+        String subject = getClaims(token).getSubject();
         return Long.parseLong(subject);
+    }
+
+    public String getLoginSessionIdFromToken(String token) {
+        return getClaims(token).get(LOGIN_SESSION_ID_CLAIM, String.class);
     }
 
     /**
@@ -159,17 +165,21 @@ public class JwtUtils {
      * @throws JwtException トークンが無効な場合
      */
     private String getEmailFromScopedToken(String token, String expectedScope) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims = getClaims(token);
 
         if (!expectedScope.equals(claims.get("scope"))) {
             throw new JwtException("Invalid token scope");
         }
 
         return claims.getSubject();
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
 }

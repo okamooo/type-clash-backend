@@ -9,6 +9,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.example.typing.service.LoginSessionService;
+
+import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,9 +20,11 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtUtils jwtUtils;
+    private final LoginSessionService loginSessionService;
 
-    public JwtAuthenticationFilter(JwtUtils jwtUtils) {
+    public JwtAuthenticationFilter(JwtUtils jwtUtils, LoginSessionService loginSessionService) {
         this.jwtUtils = jwtUtils;
+        this.loginSessionService = loginSessionService;
     }
 
     private String parseJwt(HttpServletRequest request) {
@@ -36,18 +41,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        String token = parseJwt(request);
+        try {
+            String token = parseJwt(request);
+            if (token == null)
+                return;
 
-        if (token != null && jwtUtils.validateToken(token)) {
-            Long userId = jwtUtils.getUserIdFromToken(token);
+            Claims claims = jwtUtils.validateAndGetClaims(token);
+            if (claims == null) {
+                SecurityContextHolder.clearContext();
+                return;
+            }
 
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId,
-                    null, Collections.emptyList());
+            Long userId = Long.parseLong(claims.getSubject());
+            String loginSessionId = claims.get("loginSessionId", String.class);
+            if (!loginSessionService.isValid(userId, loginSessionId)) {
+                SecurityContextHolder.clearContext();
+                return;
+            }
 
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userId, null,
+                    Collections.emptyList());
             SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        } finally {
+            filterChain.doFilter(request, response);
         }
-
-        filterChain.doFilter(request, response);
-
     }
 }
