@@ -1,14 +1,19 @@
 package com.example.typing.service;
 
 import com.example.typing.dto.BattleMessage;
+import com.example.typing.dto.response.BattlePlayerResultResponse;
+import com.example.typing.dto.response.BattleResultResponse;
 import com.example.typing.entity.BattleResult;
 import com.example.typing.entity.MagicWords;
+import com.example.typing.entity.User;
 import com.example.typing.repository.BattleResultRepository;
 import com.example.typing.repository.MagicWordRepository;
+import com.example.typing.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -17,14 +22,17 @@ public class BattleModeService {
     private final MagicWordRepository magicWordRepository;
     private final BattleResultRepository battleResultRepository;
     private final ActiveBattleService activeBattleService;
+    private final UserRepository userRepository;
 
     public BattleModeService(
             MagicWordRepository magicWordRepository,
             BattleResultRepository battleResultRepository,
-            ActiveBattleService activeBattleService) {
+            ActiveBattleService activeBattleService,
+            UserRepository userRepository) {
         this.magicWordRepository = magicWordRepository;
         this.battleResultRepository = battleResultRepository;
         this.activeBattleService = activeBattleService;
+        this.userRepository = userRepository;
     }
 
     public List<MagicWords> getAllMagicWords() {
@@ -72,9 +80,25 @@ public class BattleModeService {
         if (activeBattleService.isParticipant(matchId, userId)) {
             return true;
         }
-        return battleResultRepository.findById(matchId)
-                .map(record -> userId.equals(record.getPlayer1Id()) || userId.equals(record.getPlayer2Id()))
-                .orElse(false);
+        BattleResult record = loadBattleResult(matchId);
+        return record != null && isParticipantRecord(record, userId);
+    }
+
+    /**
+     * 対戦結果を1回だけ読み、存在確認と参加者チェックを行う（GET / POST 認可用）
+     */
+    public BattleResultAccess resolveBattleResultAccess(Long matchId, Long userId) {
+        if (matchId == null || userId == null) {
+            return BattleResultAccess.notFound();
+        }
+        BattleResult result = loadBattleResult(matchId);
+        if (result == null) {
+            return BattleResultAccess.notFound();
+        }
+        if (!canAccessBattleResult(result, matchId, userId)) {
+            return BattleResultAccess.forbidden(result);
+        }
+        return BattleResultAccess.ok(result, buildBattleResultResponse(result));
     }
 
     /**
@@ -108,8 +132,21 @@ public class BattleModeService {
      */
     @Transactional
     public BattleResult saveBattleResult(BattleResult incoming, Long authenticatedUserId) {
-        BattleResult existing = battleResultRepository.findById(incoming.getMatchId()).orElse(null);
+        BattleResult existing = loadBattleResult(incoming.getMatchId());
         if (existing == null) {
+            return null;
+        }
+        return saveBattleResult(incoming, authenticatedUserId, existing);
+    }
+
+    @Transactional
+    public BattleResult saveBattleResult(
+            BattleResult incoming,
+            Long authenticatedUserId,
+            BattleResult existing) {
+        if (existing == null
+                || incoming.getMatchId() == null
+                || !incoming.getMatchId().equals(existing.getMatchId())) {
             return null;
         }
         if (!isParticipantRecord(existing, authenticatedUserId)) {
@@ -132,6 +169,76 @@ public class BattleModeService {
     private boolean isParticipantRecord(BattleResult record, Long userId) {
         return userId != null
                 && (userId.equals(record.getPlayer1Id()) || userId.equals(record.getPlayer2Id()));
+    }
+
+    private boolean canAccessBattleResult(BattleResult record, Long matchId, Long userId) {
+        if (isParticipantRecord(record, userId)) {
+            return true;
+        }
+        return activeBattleService.isParticipant(matchId, userId);
+    }
+
+    private BattleResult loadBattleResult(Long matchId) {
+        if (matchId == null) {
+            return null;
+        }
+        BattleResult result = battleResultRepository.findById(matchId).orElse(null);
+        if (result != null) {
+            resolveWinnerFromHp(result);
+        }
+        return result;
+    }
+
+    private BattleResultResponse buildBattleResultResponse(BattleResult result) {
+        List<BattlePlayerResultResponse> players = new ArrayList<>();
+        players.add(buildPlayerResult(
+                result.getPlayer1Id(),
+                "player1",
+                result.getPlayer1Score(),
+                result.getPlayer1AccuracyRate(),
+                result.getPlayer1TypedChars(),
+                result.getPlayer1MissCount(),
+                result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer1Id())));
+        players.add(buildPlayerResult(
+                result.getPlayer2Id(),
+                "player2",
+                result.getPlayer2Score(),
+                result.getPlayer2AccuracyRate(),
+                result.getPlayer2TypedChars(),
+                result.getPlayer2MissCount(),
+                result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer2Id())));
+
+        return BattleResultResponse.builder()
+                .id(result.getMatchId())
+                .winnerId(result.getWinnerId())
+                .finishedAt(result.getFinishedAt() != null ? result.getFinishedAt().toString() : "")
+                .players(players)
+                .build();
+    }
+
+    private BattlePlayerResultResponse buildPlayerResult(
+            Long userId,
+            String role,
+            Integer score,
+            Integer accuracyRate,
+            Integer typedChars,
+            Integer missCount,
+            boolean isWinner) {
+        User user = userRepository.findByIdAndDeletedAtIsNull(userId).orElse(null);
+        String name = user != null ? user.getName() : "Unknown";
+        String iconImage = user != null ? user.getIconImage() : null;
+
+        return BattlePlayerResultResponse.builder()
+                .id(userId)
+                .name(name)
+                .iconImage(iconImage)
+                .role(role)
+                .score(score)
+                .accuracyRate(accuracyRate)
+                .typedChars(typedChars)
+                .missCount(missCount)
+                .isWinner(isWinner)
+                .build();
     }
 
     private void applySenderUpdate(BattleResult record, BattleMessage message, boolean isPlayer1) {
@@ -245,10 +352,6 @@ public class BattleModeService {
     }
 
     public BattleResult getBattleResult(Long matchId) {
-        BattleResult result = battleResultRepository.findById(matchId).orElse(null);
-        if (result != null) {
-            resolveWinnerFromHp(result);
-        }
-        return result;
+        return loadBattleResult(matchId);
     }
 }
