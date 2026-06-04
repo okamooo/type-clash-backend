@@ -35,9 +35,9 @@
 
 | メソッド | URL | 説明 |
 | --- | --- | --- |
-| GET | `/api/magic-words` | 対戦モードで出題するワードを全件取得する |
+| GET | `/api/magic-words` | 対戦モードで出題するマジックワードを全件取得する |
 | POST | `/api/battle-results` | 対戦の結果（対戦ID・スコア・正答率・勝者など）を登録する |
-| GET | `/api/battle-results/:id` | 指定した対戦結果IDのデータを1件取得する |
+| GET | `/api/battle-results?id=:matchId` | 指定した対戦ID（matchId）の結果を1件取得する。参加者のみ可。`players[]` に各プレイヤーの `id`・`name`・`iconImage`・`role`・スコア等を含む |
 
 ---
 

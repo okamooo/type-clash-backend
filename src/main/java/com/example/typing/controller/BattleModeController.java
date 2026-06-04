@@ -1,27 +1,19 @@
 package com.example.typing.controller;
 
-import com.example.typing.dto.response.BattlePlayerResultResponse;
-import com.example.typing.dto.response.BattleResultResponse;
 import com.example.typing.entity.BattleResult;
 import com.example.typing.entity.MagicWords;
 import com.example.typing.security.WebSocketAuthHelper;
 import com.example.typing.service.BattleModeService;
+import com.example.typing.service.BattleResultAccess;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
-@CrossOrigin(origins = {
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://13.230.137.15:3000",
-        "http://13.230.137.15"
-})
 public class BattleModeController {
 
     private final BattleModeService battleModeService;
@@ -56,16 +48,17 @@ public class BattleModeController {
         if (result.getMatchId() == null || result.getMatchId() <= 0) {
             return ResponseEntity.badRequest().body(Map.of("message", "対戦IDが不足しています"));
         }
-        if (!battleModeService.isParticipant(result.getMatchId(), userId)) {
-            BattleResult existing = battleModeService.getBattleResult(result.getMatchId());
-            if (existing == null) {
-                return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
-            }
+
+        BattleResultAccess access = battleModeService.resolveBattleResultAccess(result.getMatchId(), userId);
+        if (access.status() == BattleResultAccess.Status.NOT_FOUND) {
+            return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
+        }
+        if (access.status() == BattleResultAccess.Status.FORBIDDEN) {
             return ResponseEntity.status(403).body(Map.of("message", "この対戦の参加者ではありません"));
         }
 
         try {
-            BattleResult saved = battleModeService.saveBattleResult(result, userId);
+            BattleResult saved = battleModeService.saveBattleResult(result, userId, access.record());
             if (saved == null) {
                 return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
             }
@@ -88,48 +81,15 @@ public class BattleModeController {
         if (id == null || id <= 0) {
             return ResponseEntity.badRequest().body(Map.of("message", "不正な対戦IDです"));
         }
-        if (!battleModeService.isParticipant(id, userId)) {
-            BattleResult existing = battleModeService.getBattleResult(id);
-            if (existing == null) {
-                return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
-            }
+
+        BattleResultAccess access = battleModeService.resolveBattleResultAccess(id, userId);
+        if (access.status() == BattleResultAccess.Status.NOT_FOUND) {
+            return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
+        }
+        if (access.status() == BattleResultAccess.Status.FORBIDDEN) {
             return ResponseEntity.status(403).body(Map.of("message", "この対戦の参加者ではありません"));
         }
 
-        BattleResult result = battleModeService.getBattleResult(id);
-        if (result == null) {
-            return ResponseEntity.status(404).body(Map.of("message", "対戦結果が見つかりません"));
-        }
-
-        List<BattlePlayerResultResponse> players = new ArrayList<>();
-
-        players.add(BattlePlayerResultResponse.builder()
-                .id(result.getPlayer1Id())
-                .role("player1")
-                .score(result.getPlayer1Score())
-                .accuracyRate(result.getPlayer1AccuracyRate())
-                .typedChars(result.getPlayer1TypedChars())
-                .missCount(result.getPlayer1MissCount())
-                .isWinner(result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer1Id()))
-                .build());
-
-        players.add(BattlePlayerResultResponse.builder()
-                .id(result.getPlayer2Id())
-                .role("player2")
-                .score(result.getPlayer2Score())
-                .accuracyRate(result.getPlayer2AccuracyRate())
-                .typedChars(result.getPlayer2TypedChars())
-                .missCount(result.getPlayer2MissCount())
-                .isWinner(result.getWinnerId() != null && result.getWinnerId().equals(result.getPlayer2Id()))
-                .build());
-
-        BattleResultResponse response = BattleResultResponse.builder()
-                .id(result.getMatchId())
-                .winnerId(result.getWinnerId())
-                .finishedAt(result.getFinishedAt() != null ? result.getFinishedAt().toString() : "")
-                .players(players)
-                .build();
-
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(access.response());
     }
 }

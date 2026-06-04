@@ -12,6 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BattlePlayerResultResponse {
     private Long id;
+    private String name;
+    private String iconImage;
     private String role; // "player1" or "player2"
     private Integer score;
     private Integer accuracyRate;
